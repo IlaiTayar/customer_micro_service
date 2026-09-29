@@ -1,9 +1,9 @@
 from typing import Optional, List
 
-from model.customer import Customer
-from model.order import Order
-from model.order_request import OrderRequest
-from model.order_response import OrderResponse
+from model.base_models.customer import Customer
+from model.base_models.order import Order
+from model.requst_response_models.order_request import OrderRequest
+from model.requst_response_models.order_response import OrderResponse
 from repository import order_repository, customer_repository
 from service import customer_service
 

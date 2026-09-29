@@ -4,7 +4,7 @@ from typing import Dict, Optional, List, Union
 from databases.interfaces import Record
 
 from database import database
-from model.customer import Customer, CustomerStatus
+from model.base_models.customer import Customer, CustomerStatus
 from repository import cache_repository
 
 TABLE_NAME = "customer"

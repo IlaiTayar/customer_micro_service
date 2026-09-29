@@ -2,9 +2,9 @@ from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 
-from model.order import Order
-from model.order_request import OrderRequest
-from model.order_response import OrderResponse
+from model.base_models.order import Order
+from model.requst_response_models.order_request import OrderRequest
+from model.requst_response_models.order_response import OrderResponse
 from service import order_service
 
 router = APIRouter(
@@ -13,7 +13,7 @@ router = APIRouter(
 )
 
 
-@router.post("/create_order", response_model=OrderResponse ,status_code=201)
+@router.post("/create", response_model=OrderResponse ,status_code=201)
 async def create_order(order_request: OrderRequest) -> OrderResponse:
 
     result: Optional[OrderResponse] = await order_service.create_order(order_request)
@@ -24,7 +24,7 @@ async def create_order(order_request: OrderRequest) -> OrderResponse:
     return result
 
 
-@router.put("/update_order-{order_id}", status_code=200)
+@router.put("/update-{order_id}", status_code=200)
 async def update_order_by_id(order_id: int, order: Order) -> str:
 
     result: Optional[str] = await order_service.update_order_by_id(order_id, order)
@@ -34,7 +34,7 @@ async def update_order_by_id(order_id: int, order: Order) -> str:
     return result
 
 
-@router.get("/get_order-{order_id}", response_model=Order ,status_code=200)
+@router.get("/get-{order_id}", response_model=Order ,status_code=200)
 async def get_order_by_id(order_id: int) -> Order:
     result: Optional[Order] = await order_service.get_order_by_id(order_id)
 
@@ -44,13 +44,13 @@ async def get_order_by_id(order_id: int) -> Order:
     return result
 
 
-@router.get("/get_all_orders", response_model=List[Order],status_code=200)
+@router.get("/get/all", response_model=List[Order],status_code=200)
 async def get_all_orders() -> List[Order]:
 
     return await order_service.get_all_orders()
 
 
-@router.delete("/delete_order-{order_id}", status_code=200)
+@router.delete("/delete-{order_id}", status_code=200)
 async def delete_order_by_id(order_id: int) -> str:
     result: Optional[str] = await order_service.delete_order_by_id(order_id)
 

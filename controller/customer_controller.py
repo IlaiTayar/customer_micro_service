@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException
 
-from model.customer import Customer
+from model.base_models.customer import Customer
 from service import customer_service
 
 router: APIRouter = APIRouter(
@@ -12,7 +12,7 @@ router: APIRouter = APIRouter(
 )
 
 
-@router.post("/create_customer", status_code=201)
+@router.post("/create", status_code=201)
 async def create_customer(customer: Customer) -> str:
 
     result: Optional[int] = await customer_service.create_customer(customer)
@@ -22,7 +22,7 @@ async def create_customer(customer: Customer) -> str:
     return "customer created successfully"
 
 
-@router.put("/update_customer-{customer_id}",status_code=200)
+@router.put("/update-{customer_id}",status_code=200)
 async def update_customer_by_id(customer_id: int, customer: Customer) -> str:
 
     result: Optional[str] = await customer_service.update_customer_by_id(customer_id, customer)
@@ -35,7 +35,7 @@ async def update_customer_by_id(customer_id: int, customer: Customer) -> str:
     return result
 
 
-@router.get("/get_customer-{customer_id}", response_model=Customer, status_code=200)
+@router.get("/get-{customer_id}", response_model=Customer, status_code=200)
 async def get_customer_by_id(customer_id: int) -> Optional[Customer]:
 
     result: Optional[Customer] = await customer_service.get_customer_by_id(customer_id)
@@ -46,13 +46,13 @@ async def get_customer_by_id(customer_id: int) -> Optional[Customer]:
         return result
 
 
-@router.get("/get_all_customers",response_model=List[Customer], status_code=200)
+@router.get("/get/all",response_model=List[Customer], status_code=200)
 async def get_all_customers() -> List[Customer]:
 
     return await customer_service.get_all_customers()
 
 
-@router.delete("/delete_customer-{customer_id}", status_code=200)
+@router.delete("/delete-{customer_id}", status_code=200)
 async def delete_customer_by_id(customer_id: int) -> str:
 
     result: Optional[str] = await customer_service.delete_customer_by_id(customer_id)

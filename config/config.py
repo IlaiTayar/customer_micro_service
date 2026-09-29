@@ -10,6 +10,7 @@ class Config(BaseSettings):
 
     DATABASE_URL: str = f"mysql+aiomysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DATABASE}"
     TV_MAZE_BASE_URL: str = "https://api.tvmaze.com"
+    SELLER_SERVICE_BASE_URL: str = "http://localhost:8001"
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379

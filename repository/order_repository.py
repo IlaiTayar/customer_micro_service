@@ -3,7 +3,7 @@ from typing import Dict, Optional, List, Union
 from databases.interfaces import Record
 
 from database import database
-from model.order import Order
+from model.base_models.order import Order
 
 
 TABLE_NAME = "orders"

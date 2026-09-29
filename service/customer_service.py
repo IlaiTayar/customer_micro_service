@@ -1,6 +1,6 @@
 from typing import Optional, List
 
-from model.customer import Customer, CustomerStatus
+from model.base_models.customer import Customer, CustomerStatus
 from repository import customer_repository, order_repository
 
 
