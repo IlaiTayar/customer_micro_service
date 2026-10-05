@@ -13,35 +13,57 @@ from service import customer_service
 
 
 async def create_order(order_request: OrderRequest) -> Union[OrderResponse, CustomerException, OrderException]:
-    selected_customer: Customer
+    customer: Customer
+
     if order_request.customer.customer_id is None:
-        created_customer_id: Union[int, CustomerException] = await customer_service.create_customer(order_request.customer)
 
-        if isinstance(created_customer_id, CustomerException):
-            return created_customer_id
+        existing_customer = await customer_service.get_customer_by_email(order_request.customer.email)
 
-        customer: Union[Customer, CustomerException] = await customer_service.get_customer_by_id(created_customer_id)
+        if isinstance(existing_customer, Customer):
+            customer = existing_customer
 
-        if isinstance(customer, CustomerException):
-            return customer
+        elif existing_customer == CustomerException.CUSTOMER_NOT_FOUND:
+
+            created_customer_id = await customer_service.create_customer(order_request.customer)
+            if isinstance(created_customer_id, CustomerException):
+                return created_customer_id
+
+            customer_result = await customer_service.get_customer_by_id(created_customer_id)
+
+            if isinstance(customer_result, CustomerException):
+                return customer_result
+
+            customer = customer_result
 
     else:
-        existing_customer: Union[Customer, CustomerException] = await customer_service.get_customer_by_id(order_request.customer.customer_id)
+
+        existing_customer = await customer_service.get_customer_by_id(order_request.customer.customer_id)
+
         if isinstance(existing_customer, CustomerException):
             return existing_customer
 
-        customer: Customer = existing_customer
+        customer = existing_customer
 
-    selected_customer = customer
-    order_request.order.customer_id = selected_customer.customer_id
+        customer_by_email = await customer_service.get_customer_by_email(order_request.customer.email)
 
+        if isinstance(customer_by_email, Customer):
+
+            if customer_by_email.customer_id != customer.customer_id:
+                return CustomerException.CUSTOMER_EXISTS
+
+
+    order_request.order.customer_id = customer.customer_id
     seller_item = await seller_service_api.get_lowest_price_item_by_name(order_request.order.item_name)
+
     if seller_item is not None:
         order_request.order.price = seller_item.price
 
     await order_repository.create_order(order_request.order)
-    customer_orders = await order_repository.get_orders_by_customer_id(selected_customer.customer_id)
-    order_response: OrderResponse = OrderResponse(customer=selected_customer, customer_orders=customer_orders)
+
+    customer_orders = await get_orders_by_customer_id(customer.customer_id)
+    if isinstance(customer_orders, CustomerException):
+        return customer_orders
+    order_response = OrderResponse(customer=customer, customer_orders=customer_orders)
 
     return order_response
 

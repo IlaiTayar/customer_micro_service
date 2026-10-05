@@ -14,28 +14,30 @@ async def _check_for_vip(customer_status: CustomerStatus):
 
 
 async def create_customer(customer: Customer) -> Union[int, CustomerException]:
-    existing_mails = await customer_repository.get_customer_by_email(customer.email)
-    if len(existing_mails) > 0:
-        return CustomerException.CUSTOMER_EXISTS
+    existing_customer = await get_customer_by_email(customer.email)
 
-    if customer.status == CustomerStatus.VIP:
-        if await _check_for_vip(customer.status) == CustomerException.VIP_MAX_LIMIT:
-            return CustomerException.VIP_MAX_LIMIT
+    if existing_customer == CustomerException.CUSTOMER_NOT_FOUND:
 
-    return await customer_repository.create_customer(customer)
+        if customer.status == CustomerStatus.VIP:
+            if await _check_for_vip(customer.status) == CustomerException.VIP_MAX_LIMIT:
+                return CustomerException.VIP_MAX_LIMIT
+
+        return await customer_repository.create_customer(customer)
+
+    return CustomerException.CUSTOMER_EXISTS
 
 
 async def update_customer_by_id(customer_id: int, customer: Customer) -> Union[str, CustomerException]:
-    existing_customer: Optional[Customer] = await customer_repository.get_customer_by_id(customer_id)
+    existing_customer = await customer_repository.get_customer_by_id(customer_id)
 
-    if not existing_customer:
+    if existing_customer is None:
         return CustomerException.CUSTOMER_NOT_FOUND
 
-    existing_mails = await customer_repository.get_customer_by_email(customer.email)
-    if len(existing_mails) > 0:
-        for mail in existing_mails:
-            if mail.customer_id != customer_id and mail.email == customer.email:
-                return CustomerException.CUSTOMER_EXISTS
+    existing_email = await get_customer_by_email(customer.email)
+    if isinstance(existing_email, Customer):
+
+        if existing_email.customer_id != customer_id:
+            return CustomerException.CUSTOMER_EXISTS
 
     if existing_customer.status == CustomerStatus.REGULAR and customer.status == CustomerStatus.VIP:
         if await _check_for_vip(customer.status) == CustomerException.VIP_MAX_LIMIT:
@@ -48,7 +50,15 @@ async def get_customer_by_id(customer_id: int) -> Union[Customer, CustomerExcept
 
     customer: Optional[Customer] = await customer_repository.get_customer_by_id(customer_id)
 
-    if not customer:
+    if customer is None:
+        return CustomerException.CUSTOMER_NOT_FOUND
+
+    return customer
+
+
+async def get_customer_by_email(customer_email: str) -> Union[Customer, CustomerException]:
+    customer: Optional[Customer] = await customer_repository.get_customer_by_email(customer_email)
+    if customer is None:
         return CustomerException.CUSTOMER_NOT_FOUND
 
     return customer

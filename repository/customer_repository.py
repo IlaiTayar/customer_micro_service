@@ -104,13 +104,13 @@ async def get_customer_by_status(status: CustomerStatus) -> List[Customer]:
     return [_to_customer(record) for record in records]
 
 
-async def get_customer_by_email(email: str) -> List[Customer]:
+async def get_customer_by_email(email: str) -> Optional[Customer]:
     query: str = f"""
     select * from {TABLE_NAME} where email = :email
     """
 
-    records: List[Record] = await database.fetch_all(query, values={"email": email})
-    return [_to_customer(record) for record in records]
+    record: Optional[Record] = await database.fetch_one(query, values={"email": email})
+    return _to_customer(record) if record else None
 
 
 async def get_all_customers() -> List[Customer]:

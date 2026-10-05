@@ -18,16 +18,22 @@ router = APIRouter(
 def _exception_handler(result:Any) -> Any :
     if isinstance(result, OrderException) or isinstance(result, CustomerException):
         if result == CustomerException.CUSTOMER_NOT_FOUND:
-            raise HTTPException(status_code=404, detail=f"{CustomerException.CUSTOMER_NOT_FOUND}")
+            raise HTTPException(status_code=404, detail=f"{result.name}")
+
+        if result == CustomerException.CUSTOMER_EXISTS:
+            raise HTTPException(status_code=409, detail=f"{result.name}")
+
+        if result == CustomerException.VIP_MAX_LIMIT:
+            raise HTTPException(status_code=409, detail=f"{result.name}")
 
         if result == OrderException.ORDER_NOT_FOUND:
-            raise HTTPException(status_code=404, detail=f"{OrderException.ORDER_NOT_FOUND}")
+            raise HTTPException(status_code=404, detail=f"{result.name}")
 
         if result == OrderException.ORDER_ALREADY_EXISTS:
-            raise HTTPException(status_code=409, detail=f"{OrderException.ORDER_ALREADY_EXISTS}")
+            raise HTTPException(status_code=409, detail=f"{result.name}")
 
         if result == OrderException.INVALID_INPUT:
-            raise HTTPException(status_code=422, detail=f"{OrderException.INVALID_INPUT}")
+            raise HTTPException(status_code=422, detail=f"{result.name}")
 
     return result
 
