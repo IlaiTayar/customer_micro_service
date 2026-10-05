@@ -16,11 +16,9 @@ class Config(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_TTL: int = 100
 
-    @computed_field  # type: ignore[prop-decorator]
+    @computed_field
     @property
     def DATABASE_URL(self) -> str:
-        # Built from the individual MYSQL_* settings so that environment
-        # variable overrides are actually reflected in the connection URL.
         return (
             f"mysql+aiomysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
             f"@{self.MYSQL_HOST}:{self.MYSQL_PORT}/{self.MYSQL_DATABASE}"

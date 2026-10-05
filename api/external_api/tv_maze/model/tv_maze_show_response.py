@@ -6,7 +6,6 @@ from pydantic import BaseModel
 class TvMazeShowResponse(BaseModel):
     tv_show_id: int
     tv_show_name: str
-    # The TVmaze API may return null for these fields, so they are optional.
     tv_show_url: Optional[str] = None
     tv_show_language: Optional[str] = None
     tv_show_description: Optional[str] = None

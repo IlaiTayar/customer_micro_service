@@ -68,7 +68,6 @@ async def get_customer_by_id(customer_id: Optional[int]) -> Optional[Customer]:
 
         if str_customer:
             customer = _to_customer(json.loads(str_customer))
-            # Refresh the TTL on a cache hit.
             cache_repository.remove_cache_entity(str(customer_id))
             cache_repository.create_cache_entity(str(customer_id), customer.model_dump_json())
             return customer
