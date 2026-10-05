@@ -1,0 +1,7 @@
+from enum import Enum
+
+
+class OrderException(Enum):
+    ORDER_NOT_FOUND = "ORDER NOT FOUND"
+    ORDER_ALREADY_EXISTS = "ORDER ALREADY EXISTS"
+    INVALID_INPUT = "INVALID INPUT"

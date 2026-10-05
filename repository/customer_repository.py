@@ -104,6 +104,15 @@ async def get_customer_by_status(status: CustomerStatus) -> List[Customer]:
     return [_to_customer(record) for record in records]
 
 
+async def get_customer_by_email(email: str) -> List[Customer]:
+    query: str = f"""
+    select * from {TABLE_NAME} where email = :email
+    """
+
+    records: List[Record] = await database.fetch_all(query, values={"email": email})
+    return [_to_customer(record) for record in records]
+
+
 async def get_all_customers() -> List[Customer]:
     query: str = f"""
     SELECT * FROM {TABLE_NAME}
