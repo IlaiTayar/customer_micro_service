@@ -1,73 +1,159 @@
-first_serverA:
+# Customer Micro Service
 
-lightweight FastAPI service with aiomysql for async MySQL access,
-Redis as a cache layer, all containerized with Docker and orchestrated via docker‑compose.
+A small FastAPI micro service that manages **customers**, their **orders**, and their
+**favorite items**. It is one half of a two-service learning project; it talks to the
+companion [`sellers_micro_service`](https://github.com/IlaiTayar/sellers_micro_service)
+over HTTP to resolve item prices, and it also demonstrates calling a public external API
+(TVmaze).
 
-Features:
+> This is a personal learning project built to practice a layered micro service
+> architecture (REST API + MySQL + Redis caching + inter-service calls). It is not meant
+> for production use.
 
-- FastAPI: Building blocks for async REST endpoints.
-- aiomysql + databases: Async MySQL driver.
-- Redis: Simple key‑value cache (e.g., customer lookup).
-- Docker / docker‑compose: Reproducible environment, zero‑config deployment.
-- Layered architecture: controller, repository, service – keeps business logic testable.
+## Features
 
-Quick start:
+- CRUD for **customers**, with a VIP tier limited to 10 customers.
+- CRUD for **orders**; on creation the order price is looked up from the seller service
+  (lowest price for the item name).
+- CRUD for **customer favorite items**, validated against items in the seller service.
+- A **TVmaze** proxy endpoint that fetches show details from the public TVmaze API.
+- **Redis** caching for customer and favorite-item reads, with a configurable TTL.
 
-# Clone
-git clone https://github.com/IlaiTayar/first_server.git
-cd first_server
+## Tech stack
 
-# ── Optionally create a virtual env ──
-python -m venv .venv
-source .venv\Scripts\activate   # apple: .venv/bin/activate
+- Python 3.11+
+- [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/)
+- [`databases`](https://www.encode.io/databases/) + `aiomysql` (async MySQL access)
+- [Pydantic v2](https://docs.pydantic.dev/) + `pydantic-settings`
+- [Redis](https://redis.io/) via `redis-py`
+- [`httpx`](https://www.python-httpx.org/) for outbound HTTP calls
 
-# Install dependencies
-pip install -r requirements.txt
+## Architecture
 
-# Run locally (no Docker)
-uvicorn main:app --reload
+The service follows a clean, layered structure:
 
-Docker:
+```
+controller/   FastAPI routers (HTTP layer, request/response + error mapping)
+service/      Business logic (validation, VIP rules, cross-service orchestration)
+repository/   Data access (SQL queries + Redis cache)
+model/        Pydantic models: base models, request/response models, domain exceptions
+api/          Clients for external (TVmaze) and internal (seller service) APIs
+config/       Settings loaded from environment variables
+```
 
-# Build & start services
+Services return either a value or a domain `*Exception` enum; the controllers translate
+those enums into the appropriate HTTP status codes.
+
+## Project layout
+
+```
+customer_micro_service/
+├─ main.py                      # FastAPI app + startup/shutdown (lifespan)
+├─ database.py                  # Async Database instance
+├─ config/config.py             # Settings (env-driven)
+├─ controller/                  # customer / order / favorite-item / tv_maze routers
+├─ service/                     # business logic
+├─ repository/                  # SQL + cache access
+├─ model/                       # pydantic models + exception enums
+├─ api/                         # external (tv_maze) + internal (seller) clients
+├─ redisClient/redis_client.py  # Redis client
+├─ resources/db-migrations/     # init.sql (schema + seed data)
+├─ docker-compose.yml           # MySQL + Redis for local development
+└─ requirements.txt
+```
+
+## Configuration
+
+All settings have defaults and can be overridden with environment variables
+(see `config/config.py`):
+
+| Variable                  | Default                   | Description                         |
+|---------------------------|---------------------------|-------------------------------------|
+| `MYSQL_USER`              | `user`                    | MySQL user                          |
+| `MYSQL_PASSWORD`          | `password`                | MySQL password                      |
+| `MYSQL_HOST`              | `localhost`               | MySQL host                          |
+| `MYSQL_PORT`              | `3306`                    | MySQL port                          |
+| `MYSQL_DATABASE`          | `main`                    | Database name                       |
+| `TV_MAZE_BASE_URL`        | `https://api.tvmaze.com`  | TVmaze API base URL                 |
+| `SELLER_SERVICE_BASE_URL` | `http://localhost:8001`   | Base URL of the seller service      |
+| `REDIS_HOST`              | `localhost`               | Redis host                          |
+| `REDIS_PORT`              | `6379`                    | Redis port                          |
+| `REDIS_TTL`               | `100`                     | Cache TTL in seconds                |
+
+The SQLAlchemy-style `DATABASE_URL` is derived automatically from the `MYSQL_*` values.
+
+## Getting started
+
+### 1. Start MySQL and Redis
+
+```bash
 docker compose up -d
+```
 
-# Stop
-docker compose down 
+This starts a MySQL 8 instance on `3306` (seeded from `resources/db-migrations/init.sql`)
+and a Redis instance on `6379`.
 
-The API will be available at http://localhost:8000.
+### 2. Install dependencies
 
-API reference:
+```bash
+python -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-HTTP,Path,Description
-POST /customers/,"Create a new customer. Body: {first_name, last_name, email}.",
-GET /customers/{id},Retrieve customer by ID.,
-GET /orders/,List all orders for the authenticated customer (via customer_id query).,
-POST /orders/,Create an order for a customer.,
+### 3. Run the service
 
-All endpoints return JSON; see the OpenAPI docs at http://localhost:8000/docs.
+```bash
+uvicorn main:app --reload --port 8000
+```
 
-Architecture overview:
-- The controller layers expose the HTTP routes.
-- The repository performs async DB queries and caches results with Redis.
-- Redis is configured in config/config.py (TTL = 100 s).
-- Docker volumes expose MySQL data persistently; the API container uses the same network as the DB and cache.
+Interactive API docs are then available at `http://localhost:8000/docs`.
 
-Configuration:
+> To exercise order creation and favorite items end-to-end, also run the
+> `sellers_micro_service` on port `8001`.
 
-All settings live in config/config.py. Override them with environment variables:
+## API overview
 
-MYSQL_HOST=mysql,
-MYSQL_USER=root,
-MYSQL_PASSWORD=secret,
-MYSQL_DATABASE=main,
-REDIS_HOST=redis,
-REDIS_PORT=6379
+### Customers (`/customer`)
 
-Testing:
+| Method | Path                        | Description                 |
+|--------|-----------------------------|-----------------------------|
+| POST   | `/customer/create`          | Create a customer           |
+| PUT    | `/customer/update-{id}`     | Update a customer by id     |
+| GET    | `/customer/get-{id}`        | Get a customer by id        |
+| GET    | `/customer/get/all`         | List all customers          |
+| DELETE | `/customer/delete-{id}`     | Delete a customer by id     |
 
-pytest -v
+### Orders (`/order`)
 
-(You’ll need pytest-asyncio and httpx in dev dependencies.)
+| Method | Path                     | Description              |
+|--------|--------------------------|--------------------------|
+| POST   | `/order/create`          | Create an order          |
+| PUT    | `/order/update-{id}`     | Update an order by id    |
+| GET    | `/order/get-{id}`        | Get an order by id       |
+| GET    | `/order/get/all`         | List all orders          |
+| DELETE | `/order/delete-{id}`     | Delete an order by id    |
 
-LicenseMIT © 2026 IlaiTayar
+### Favorite items (`/customer-favorite-item`)
+
+| Method | Path                                         | Description                         |
+|--------|----------------------------------------------|-------------------------------------|
+| POST   | `/customer-favorite-item/create`             | Add a favorite item for a customer  |
+| PUT    | `/customer-favorite-item/update-{id}`        | Update a favorite item by id        |
+| GET    | `/customer-favorite-item/get-item-{id}`      | Get a favorite item by id           |
+| GET    | `/customer-favorite-item/get-customer-{id}`  | List a customer's favorite items    |
+| DELETE | `/customer-favorite-item/delete-{id}`        | Delete a favorite item by id        |
+
+### TVmaze (`/tv_maze`)
+
+| Method | Path                          | Description                        |
+|--------|-------------------------------|------------------------------------|
+| GET    | `/tv_maze/get/show-{show_id}` | Fetch a TV show from the TVmaze API|
+
+### Example
+
+```bash
+curl -X POST http://localhost:8000/customer/create \
+  -H "Content-Type: application/json" \
+  -d '{"first_name": "Jane", "last_name": "Doe", "email": "jane@example.com", "status": "VIP"}'
+```

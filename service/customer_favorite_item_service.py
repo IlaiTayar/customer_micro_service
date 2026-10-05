@@ -22,9 +22,15 @@ async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) ->
         if customer.customer_id is not None and item.item_id is not None:
             existing_favorite: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await get_by_customer_id_and_item_id(customer_id=customer.customer_id, item_id=item.item_id)
 
-            if isinstance(existing_favorite, FavoriteItemException) or isinstance(existing_favorite, CustomerException):
+            # A genuine customer error should propagate to the caller.
+            if isinstance(existing_favorite, CustomerException):
                 return existing_favorite
 
+            # The favorite already exists -> do not create a duplicate.
+            if isinstance(existing_favorite, CustomerFavoriteItemResponse):
+                return FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS
+
+            # Not found (FavoriteItemException.FAVORITE_ITEM_NOT_FOUND) -> safe to create.
             favorite_item = CustomerFavoriteItem(customer_id=customer.customer_id, item_id=item.item_id)
 
             return await customer_favorite_item_repository.create_favorite_item(favorite_item)

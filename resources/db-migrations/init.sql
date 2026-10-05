@@ -17,7 +17,7 @@ CREATE TABLE orders(
 order_id INT AUTO_INCREMENT,
 customer_id INT NOT NULL,
 item_name VARCHAR(50) NOT NULL,
-price DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
 PRIMARY KEY(order_id),
 FOREIGN KEY(customer_id) REFERENCES customer(customer_id)
 );

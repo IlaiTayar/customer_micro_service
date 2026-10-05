@@ -41,7 +41,7 @@ async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) ->
 
 
 @router.put("/update-{favorite_item_id}", status_code=200)
-async def update_favorite_item_by_id(favorite_item_id, favorite_item: CustomerFavoriteItem) -> str:
+async def update_favorite_item_by_id(favorite_item_id: int, favorite_item: CustomerFavoriteItem) -> str:
     result: Union[str, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id, favorite_item)
 
     final_result = _exception_handler(result)

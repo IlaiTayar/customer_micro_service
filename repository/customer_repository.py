@@ -67,27 +67,27 @@ async def get_customer_by_id(customer_id: Optional[int]) -> Optional[Customer]:
         str_customer = cache_repository.get_cache_entity(str(customer_id))
 
         if str_customer:
-            customer_data = json.loads(str_customer)
+            customer = _to_customer(json.loads(str_customer))
+            # Refresh the TTL on a cache hit.
             cache_repository.remove_cache_entity(str(customer_id))
-            cache_repository.create_cache_entity(str(customer_id), _to_customer(customer_data).json())
-            return _to_customer(customer_data)
-
-    else:
-        query: str = f"""
-        SELECT * FROM {TABLE_NAME} WHERE customer_id = :customer_id
-        """
-
-        values: Dict[str, Optional[int]] = {
-            "customer_id": customer_id,
-        }
-
-        record: Optional[Record] = await database.fetch_one(query, values)
-        if record:
-            customer = _to_customer(record)
-            cache_repository.create_cache_entity(str(customer_id), customer.json())
+            cache_repository.create_cache_entity(str(customer_id), customer.model_dump_json())
             return customer
 
         return None
+
+    query: str = f"""
+    SELECT * FROM {TABLE_NAME} WHERE customer_id = :customer_id
+    """
+
+    values: Dict[str, Optional[int]] = {
+        "customer_id": customer_id,
+    }
+
+    record: Optional[Record] = await database.fetch_one(query, values)
+    if record:
+        customer = _to_customer(record)
+        cache_repository.create_cache_entity(str(customer_id), customer.model_dump_json())
+        return customer
 
     return None
 
