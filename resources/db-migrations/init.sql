@@ -31,6 +31,7 @@ favorite_item_id INT AUTO_INCREMENT,
 customer_id INT NOT NULL,
 item_id INT NOT NULL,
 PRIMARY KEY(favorite_item_id),
+UNIQUE KEY uq_customer_favorite_item (customer_id, item_id),
 FOREIGN KEY(customer_id) REFERENCES customer(customer_id)
 );
 
