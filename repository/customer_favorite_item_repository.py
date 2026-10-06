@@ -61,10 +61,10 @@ async def get_favorite_items_by_customer_id(customer_id: int) -> List[CustomerFa
     return [_to_customer_favorite_item(record) for record in records]
 
 
-async def get_by_customer_id_and_item_id(customer_id: int, item_id: int) -> Optional[CustomerFavoriteItem]:
-    query = f"SELECT * FROM {TABLE_NAME} WHERE customer_id=:customer_id AND item_id=:item_id"
+async def get_by_item_id(item_id: int) -> Optional[CustomerFavoriteItem]:
+    query = f"SELECT * FROM {TABLE_NAME} WHERE item_id=:item_id"
 
-    record: Optional[Record] = await database.fetch_one(query, values={"customer_id": customer_id, "item_id": item_id})
+    record: Optional[Record] = await database.fetch_one(query, values={"item_id": item_id})
     return _to_customer_favorite_item(record) if record else None
 
 
