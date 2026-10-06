@@ -189,13 +189,14 @@ function itemCardHtml(it) {
 }
 
 function renderItem(it) {
-  $('itemResult').innerHTML = itemCardHtml(it);
+  lastRenderedItems = it ? [it] : [];
+  $('itemResult').innerHTML = it ? itemCardHtml(it) : '<div class="empty">No matching item found.</div>';
 }
 
 function renderItems(items, title) {
+  lastRenderedItems = items || [];
   $('itemResult').innerHTML = (title ? '<h3>' + esc(title) + '</h3>' : '') +
-    (items || []).map(itemCardHtml).join('') ||
-    '<div class="empty">No matching items found.</div>';
+    ((items || []).map(itemCardHtml).join('') || '<div class="empty">No matching items found.</div>');
 }
 
 async function addSearchFavorite(item_id) {
@@ -203,7 +204,7 @@ async function addSearchFavorite(item_id) {
     await api('/customer-favorite-item/lookup/by-id', 'POST', { customer_id: session.customer_id, item_id });
     favoriteItemIds.add(Number(item_id));
     toast('Added to favorites', 'ok');
-    searchItemsByCurrentResult();
+    if (lastRenderedItems.length) $('itemResult').innerHTML = lastRenderedItems.map(itemCardHtml).join('');
     loadFavorites();
   } catch (e) {
     toast('Could not add favorite: ' + e.message, 'err');
@@ -269,6 +270,7 @@ function favTarget() {
 }
 
 let favoriteItemIds = new Set();
+let lastRenderedItems = [];
 
 async function loadFavorites() {
   const who = favTarget();
