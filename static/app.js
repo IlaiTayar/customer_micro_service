@@ -125,7 +125,7 @@ async function loadOrders() {
     try {
       const custs = await api('/customer');
       custs.forEach(c => { nameById[c.customer_id] = (c.first_name + ' ' + c.last_name).trim(); });
-    } catch (e) {}
+    } catch (e) { toast('Could not load customer names: ' + e.message, 'err'); }
     if (orderScope === 'me') list = list.filter(o => o.customer_id === session.customer_id);
     $('ordersBody').innerHTML = list.map(o => {
       const mine = o.customer_id === session.customer_id;
@@ -221,9 +221,9 @@ async function searchItemsByCurrentResult() {
     try {
       const query = '?item_name=' + encodeURIComponent(lastItemSearch.name) + (lastItemSearch.seller ? '&seller_name=' + encodeURIComponent(lastItemSearch.seller) : '');
       renderItem(await api('/item/by-name' + query));
-    } catch (e) {}
+    } catch (e) { toast('Could not refresh item result: ' + e.message, 'err'); }
   } else if (lastItemSearch.type === 'seller') {
-    try { renderItems(await api('/item/by-seller-name?seller_name=' + encodeURIComponent(lastItemSearch.seller)), 'Items from seller: ' + lastItemSearch.seller); } catch (e) {}
+    try { renderItems(await api('/item/by-seller-name?seller_name=' + encodeURIComponent(lastItemSearch.seller)), 'Items from seller: ' + lastItemSearch.seller); } catch (e) { toast('Could not refresh seller items: ' + e.message, 'err'); }
   }
 }
 
