@@ -47,6 +47,7 @@
         <div class="tab active" data-tab="profile">My profile</div>
         <div class="tab" data-tab="customers">Customers</div>
         <div class="tab" data-tab="orders">Orders</div>
+        <div class="tab" data-tab="items">Items</div>
         <div class="tab" data-tab="favorites">Favorites</div>
         <div class="tab" data-tab="tvmaze">TV Maze</div>
       </nav>
@@ -75,6 +76,17 @@
         </div>
         <table><thead><tr><th>Id</th><th>Name</th><th>Email</th><th>Status</th></tr></thead>
           <tbody id="customersBody"></tbody></table>
+      </section>
+
+      <section id="tab-items" class="tab-panel card hidden">
+        <h2>Find an item</h2>
+        <div class="inline">
+          <div class="field"><label>Item name</label><input id="itemSearchName" placeholder="Laptop"/></div>
+          <button id="itemSearchNameBtn" class="btn">Search by name</button>
+          <div class="field"><label>Item id</label><input id="itemSearchId" type="number" placeholder="1"/></div>
+          <button id="itemSearchIdBtn" class="btn secondary">Search by id</button>
+        </div>
+        <div id="itemResult"></div>
       </section>
 
       <section id="tab-orders" class="tab-panel card hidden">
