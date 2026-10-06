@@ -7,6 +7,13 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isAdmin = () => session && session.role === 'admin';
 const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="100%" height="100%" fill="#eef1f6"/><text x="50%" y="50%" fill="#9aa6b8" font-family="sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle">No image</text></svg>');
+const slug = (name) => ((name || 'item').toLowerCase().trim().replace(/[^a-z0-9]+/g, ',').replace(/^,+|,+$/g, '') || 'item');
+const autoImage = (name) => {
+  const s = slug(name);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
+  return 'https://loremflickr.com/400/300/' + encodeURIComponent(s) + '?lock=' + h;
+};
 
 function toast(msg, kind) {
   const t = $('toast');
@@ -126,11 +133,13 @@ async function loadOrders() {
       const canEdit = mine || isAdmin();
       const owner = nameById[o.customer_id] || ('Customer #' + o.customer_id);
       const idCell = esc(owner) + (mine ? ' <span class="badge me">me</span>' : '');
+      const img = autoImage(o.item_name);
+      const imgCell = '<img class="thumb" src="' + esc(img) + '" alt="' + esc(o.item_name) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/>';
       const acts = canEdit
         ? '<div class="actions"><button class="btn secondary sm" onclick="editOrder(' + o.order_id + ',\'' + esc(o.item_name).replace(/'/g, "\\'") + '\')">Edit</button><button class="btn danger sm" onclick="delOrder(' + o.order_id + ')">Cancel</button></div>'
         : '<span class="muted">\u2014</span>';
-      return '<tr><td>' + o.order_id + '</td><td>' + idCell + '</td><td>' + esc(o.item_name) + '</td><td>' + (o.price != null ? '$' + o.price : '\u2014') + '</td><td>' + acts + '</td></tr>';
-    }).join('') || '<tr><td colspan=5 class="empty">No orders</td></tr>';
+      return '<tr><td>' + o.order_id + '</td><td>' + idCell + '</td><td>' + imgCell + '</td><td>' + esc(o.item_name) + '</td><td>' + (o.price != null ? '$' + o.price : '\u2014') + '</td><td>' + acts + '</td></tr>';
+    }).join('') || '<tr><td colspan=6 class="empty">No orders</td></tr>';
   } catch (e) { toast(e.message, 'err'); }
 }
 
