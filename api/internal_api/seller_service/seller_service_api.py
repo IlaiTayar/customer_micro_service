@@ -7,11 +7,11 @@ from api.internal_api.seller_service.model.item_response import ItemResponse
 from database import config
 
 
-async def _get_from_seller_service(url: str) -> dict:
+async def _get_from_seller_service(url: str, params: Optional[dict] = None) -> dict:
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(url)
+            response = await client.get(url, params=params)
 
     except (httpx.ConnectError, httpx.TimeoutException) as err:
         raise HTTPException(
@@ -40,11 +40,11 @@ async def _get_from_seller_service(url: str) -> dict:
     return response.json()
 
 
-async def _try_get_from_seller_service(url: str) -> Optional[dict]:
+async def _try_get_from_seller_service(url: str, params: Optional[dict] = None) -> Optional[dict]:
 
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            response = await client.get(url)
+            response = await client.get(url, params=params)
 
     except (httpx.ConnectError, httpx.TimeoutException) as err:
         raise HTTPException(
@@ -71,17 +71,17 @@ async def _try_get_from_seller_service(url: str) -> Optional[dict]:
 
 
 async def get_lowest_price_item_by_name(item_name: str) -> ItemResponse:
-    url = f"{config.SELLER_SERVICE_BASE_URL}/item/get-name-{item_name}"
+    url = f"{config.SELLER_SERVICE_BASE_URL}/item/by-name"
 
-    data = await _get_from_seller_service(url)
+    data = await _get_from_seller_service(url, params={"item_name": item_name})
 
     return ItemResponse(**data)
 
 
 async def find_lowest_price_item_by_name(item_name: str) -> Optional[ItemResponse]:
-    url = f"{config.SELLER_SERVICE_BASE_URL}/item/get-name-{item_name}"
+    url = f"{config.SELLER_SERVICE_BASE_URL}/item/by-name"
 
-    data = await _try_get_from_seller_service(url)
+    data = await _try_get_from_seller_service(url, params={"item_name": item_name})
 
     if data is None:
         return None
@@ -90,7 +90,7 @@ async def find_lowest_price_item_by_name(item_name: str) -> Optional[ItemRespons
 
 
 async def get_item_by_item_id(item_id: int) -> ItemResponse:
-    url = f"{config.SELLER_SERVICE_BASE_URL}/item/get-id-{item_id}"
+    url = f"{config.SELLER_SERVICE_BASE_URL}/item/{item_id}"
 
     data = await _get_from_seller_service(url)
 

@@ -18,17 +18,13 @@ async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) ->
     if isinstance(customer, CustomerException):
         return customer
 
-    existing_favorite: Union[CustomerFavoriteItemResponse, FavoriteItemException] = await get_by_item_name(customer_request.item_name)
-
-    if isinstance(existing_favorite, CustomerFavoriteItemResponse):
-        return FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS
-
-    if existing_favorite == FavoriteItemException.SOMTHING_WENT_WRONG:
-        return existing_favorite
-
     item: ItemResponse = await seller_service_api.get_lowest_price_item_by_name(customer_request.item_name)
     if item.item_id is None:
         return FavoriteItemException.SOMTHING_WENT_WRONG
+
+    existing_favorite: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_customer_id_and_item_id(customer.customer_id, item.item_id)
+    if existing_favorite is not None:
+        return FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS
 
     favorite_item = CustomerFavoriteItem(customer_id=customer.customer_id, item_id=item.item_id)
 
@@ -40,7 +36,7 @@ async def update_favorite_item_by_id(favorite_item_id: int, favorite_item: Custo
     if isinstance(existing_favorite_item, FavoriteItemException):
         return existing_favorite_item
 
-    duplicate_favorite: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_item_id(favorite_item.item_id)
+    duplicate_favorite: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_customer_id_and_item_id(favorite_item.customer_id, favorite_item.item_id)
     if duplicate_favorite is not None and duplicate_favorite.favorite_item_id != favorite_item_id:
         return FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS
 
@@ -79,22 +75,6 @@ async def get_favorite_items_by_customer_id(customer_id: int) -> Union[CustomerF
     ]
     return CustomerFavoritesResponse(customer=existing_customer, favorite_items=favorite_items)
 
-async def get_by_item_name(item_name: str) -> Union[CustomerFavoriteItemResponse, FavoriteItemException]:
-    item_response: ItemResponse = await seller_service_api.get_lowest_price_item_by_name(item_name)
-    if item_response.item_id is None:
-        return FavoriteItemException.SOMTHING_WENT_WRONG
-
-    existing_favorite_item: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_item_id(item_response.item_id)
-    if existing_favorite_item is None:
-        return FavoriteItemException.FAVORITE_ITEM_NOT_FOUND
-
-    return CustomerFavoriteItemResponse(
-        favorite_item_id=existing_favorite_item.favorite_item_id,
-        customer_id=existing_favorite_item.customer_id,
-        item_response=item_response,
-    )
-
-
 async def delete_favorite_item_by_id(favorite_item_id: int) -> Union[str, FavoriteItemException]:
     existing_favorite_item: Union[CustomerFavoriteItemResponse, FavoriteItemException] = await get_favorite_item_by_id(favorite_item_id)
     if isinstance(existing_favorite_item, FavoriteItemException):
@@ -112,7 +92,7 @@ async def _add_to_favorites_if_missing(customer_id: int, item: ItemResponse) -> 
     if item.item_id is None:
         return FavoriteItemException.SOMTHING_WENT_WRONG
 
-    existing_favorite_item: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_item_id(item.item_id)
+    existing_favorite_item: Optional[CustomerFavoriteItem] = await customer_favorite_item_repository.get_by_customer_id_and_item_id(customer_id, item.item_id)
 
     if existing_favorite_item is None:
         favorite_item = CustomerFavoriteItem(customer_id=customer_id, item_id=item.item_id)

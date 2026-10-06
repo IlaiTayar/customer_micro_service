@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Customer Service Console</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <h1>Customer Service Console</h1>
+    <div class="who">
+      <span id="adminBadge" class="badge" style="background:#ffe3a3;color:#8a5800;display:none">ADMIN</span>
+      <span id="whoami" class="muted" style="color:#eaf0ff">Not signed in</span>
+      <button id="logoutBtn" class="btn ghost sm hidden">Sign out</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="loginCard" class="card">
+      <div class="authtabs">
+        <div class="authtab active" data-auth="login">Sign in</div>
+        <div class="authtab" data-auth="register">Create account</div>
+      </div>
+
+      <div id="authLogin">
+        <p class="muted">Identify yourself with your customer id and the email on file. You can only create or change data that belongs to your own id.</p>
+        <div class="form-row"><label>Customer id</label><input id="loginId" type="number" placeholder="e.g. 1"/></div>
+        <div class="form-row"><label>Email</label><input id="loginEmail" type="email" placeholder="john.smith@example.com"/></div>
+        <div class="form-row"><label></label><button id="loginBtn" class="btn">Sign in</button></div>
+        <p class="hint">Demo: 1 / john.smith@example.com &nbsp;&middot;&nbsp; admin: 100 / admin@admin (full access)</p>
+      </div>
+
+      <div id="authRegister" class="hidden">
+        <p class="muted">New here? Create an account and you will be signed in automatically.</p>
+        <div class="form-row"><label>First name</label><input id="regFirst" placeholder="Jane"/></div>
+        <div class="form-row"><label>Last name</label><input id="regLast" placeholder="Doe"/></div>
+        <div class="form-row"><label>Email</label><input id="regEmail" type="email" placeholder="jane.doe@example.com"/></div>
+        <div class="form-row"><label>Status</label>
+          <select id="regStatus"><option>REGULAR</option><option>VIP</option></select></div>
+        <div class="form-row"><label></label><button id="registerBtn" class="btn">Create account</button></div>
+      </div>
+    </section>
+
+    <div id="app" class="hidden">
+      <nav class="tabs">
+        <div class="tab active" data-tab="profile">My profile</div>
+        <div class="tab" data-tab="customers">Customers</div>
+        <div class="tab" data-tab="orders">Orders</div>
+        <div class="tab" data-tab="favorites">Favorites</div>
+        <div class="tab" data-tab="tvmaze">TV Maze</div>
+      </nav>
+
+      <section id="tab-profile" class="tab-panel card">
+        <h2>My profile</h2>
+        <div class="form-row"><label>First name</label><input id="pFirst"/></div>
+        <div class="form-row"><label>Last name</label><input id="pLast"/></div>
+        <div class="form-row"><label>Email</label><input id="pEmail"/></div>
+        <div class="form-row"><label>Status</label>
+          <select id="pStatus"><option>REGULAR</option><option>VIP</option></select></div>
+        <div class="form-row"><label></label>
+          <div class="actions">
+            <button id="pSave" class="btn">Save changes</button>
+            <button id="pDelete" class="btn danger">Delete account</button>
+          </div></div>
+      </section>
+
+      <section id="tab-customers" class="tab-panel card hidden">
+        <div class="paneltop">
+          <h2>Customers</h2>
+          <div class="scope" id="custScope">
+            <button class="seg active" data-scope="me">Only me</button>
+            <button class="seg" data-scope="all">Everyone</button>
+          </div>
+        </div>
+        <table><thead><tr><th>Id</th><th>Name</th><th>Email</th><th>Status</th></tr></thead>
+          <tbody id="customersBody"></tbody></table>
+      </section>
+
+      <section id="tab-orders" class="tab-panel card hidden">
+        <div class="paneltop">
+          <h2>Orders</h2>
+          <div class="scope" id="orderScope">
+            <button class="seg active" data-scope="me">Only mine</button>
+            <button class="seg" data-scope="all">Everyone</button>
+          </div>
+        </div>
+        <div class="inline">
+          <div class="field"><label>Item name</label><input id="oItem" placeholder="Laptop"/></div>
+          <button id="oCreate" class="btn">Place order</button>
+        </div>
+        <p class="hint">The price is resolved automatically from the sellers service. You can only edit or cancel your own orders (admins can edit any).</p>
+        <table><thead><tr><th>Id</th><th>Customer</th><th>Item</th><th>Price</th><th></th></tr></thead>
+          <tbody id="ordersBody"></tbody></table>
+      </section>
+
+      <section id="tab-favorites" class="tab-panel card hidden">
+        <div class="paneltop">
+          <h2>Favorite items</h2>
+          <div class="inline" style="margin:0">
+            <div class="field"><label>View favorites for customer id</label><input id="favWho" type="number" style="width:120px"/></div>
+            <button id="favLoad" class="btn secondary">View</button>
+          </div>
+        </div>
+        <div class="inline">
+          <div class="field"><label>Add by item name</label><input id="fName" placeholder="Monitor"/></div>
+          <button id="fAddName" class="btn">Add by name</button>
+          <div class="field"><label>Add by item id</label><input id="fId" type="number" placeholder="4"/></div>
+          <button id="fAddId" class="btn secondary">Add by id</button>
+        </div>
+        <p class="hint" id="favHint"></p>
+        <div id="favItems" class="items"></div>
+      </section>
+
+      <section id="tab-tvmaze" class="tab-panel card hidden">
+        <h2>TV Maze lookup</h2>
+        <div class="inline">
+          <div class="field"><label>Show id</label><input id="tvId" type="number" placeholder="1"/></div>
+          <button id="tvGet" class="btn">Fetch show</button>
+        </div>
+        <div id="tvResult"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+  <script src="app.js"></script>
+</body>
+</html>

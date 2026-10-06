@@ -41,6 +41,10 @@ VALUES
 ('Emily', 'Davis', 'emily.davis@example.com'),
 ('David', 'Wilson', 'david.wilson@example.com');
 
+INSERT INTO customer (customer_id, first_name, last_name, email, status)
+VALUES
+(100, 'Admin', 'User', 'admin@admin', 'REGULAR');
+
 
 INSERT INTO orders (customer_id, item_name, price)
 VALUES

@@ -1,10 +1,11 @@
 
 from typing import List, Union, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from model.base_models.customer import Customer
 from model.exception_handler_model.customer_exception import CustomerException
+from security.auth import Principal, get_current_principal, require_ownership
 from service import customer_service
 
 router: APIRouter = APIRouter(
@@ -28,7 +29,7 @@ def _exception_handler(result: Any) -> Any:
     return result
 
 
-@router.post("/create", status_code=201)
+@router.post("", status_code=201)
 async def create_customer(customer: Customer) -> str:
 
     result: Union[int, CustomerException] = await customer_service.create_customer(customer)
@@ -37,16 +38,13 @@ async def create_customer(customer: Customer) -> str:
     return "customer created successfully"
 
 
-@router.put("/update-{customer_id}",status_code=200)
-async def update_customer_by_id(customer_id: int, customer: Customer) -> str:
+@router.get("", response_model=List[Customer], status_code=200)
+async def get_all_customers() -> List[Customer]:
 
-    result: Union[str, CustomerException] = await customer_service.update_customer_by_id(customer_id, customer)
-    final_result = _exception_handler(result)
-
-    return final_result
+    return await customer_service.get_all_customers()
 
 
-@router.get("/get-{customer_id}", response_model=Customer, status_code=200)
+@router.get("/{customer_id}", response_model=Customer, status_code=200)
 async def get_customer_by_id(customer_id: int) -> Customer:
 
     result: Union[Customer, CustomerException] = await customer_service.get_customer_by_id(customer_id)
@@ -55,14 +53,21 @@ async def get_customer_by_id(customer_id: int) -> Customer:
     return final_result
 
 
-@router.get("/get/all",response_model=List[Customer], status_code=200)
-async def get_all_customers() -> List[Customer]:
+@router.put("/{customer_id}", status_code=200)
+async def update_customer_by_id(customer_id: int, customer: Customer, principal: Principal = Depends(get_current_principal)) -> str:
 
-    return await customer_service.get_all_customers()
+    require_ownership(principal, customer_id)
+
+    result: Union[str, CustomerException] = await customer_service.update_customer_by_id(customer_id, customer)
+    final_result = _exception_handler(result)
+
+    return final_result
 
 
-@router.delete("/delete-{customer_id}", status_code=200)
-async def delete_customer_by_id(customer_id: int) -> str:
+@router.delete("/{customer_id}", status_code=200)
+async def delete_customer_by_id(customer_id: int, principal: Principal = Depends(get_current_principal)) -> str:
+
+    require_ownership(principal, customer_id)
 
     result: Union[str, CustomerException] = await customer_service.delete_customer_by_id(customer_id)
     final_result = _exception_handler(result)

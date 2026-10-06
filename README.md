@@ -78,6 +78,7 @@ All settings have defaults and can be overridden with environment variables
 | `MYSQL_DATABASE`          | `main`                    | Database name                       |
 | `TV_MAZE_BASE_URL`        | `https://api.tvmaze.com`  | TVmaze API base URL                 |
 | `SELLER_SERVICE_BASE_URL` | `http://localhost:8001`   | Base URL of the seller service      |
+| `INTERNAL_API_KEY`        | `internal-shared-key`     | Shared key for internal `/references` endpoints |
 | `REDIS_HOST`              | `localhost`               | Redis host                          |
 | `REDIS_PORT`              | `6379`                    | Redis port                          |
 | `REDIS_TTL`               | `100`                     | Cache TTL in seconds                |
@@ -118,35 +119,58 @@ Interactive API docs are then available at `http://localhost:8000/docs`.
 
 ### Customers (`/customer`)
 
-| Method | Path                        | Description                 |
-|--------|-----------------------------|-----------------------------|
-| POST   | `/customer/create`          | Create a customer           |
-| PUT    | `/customer/update-{id}`     | Update a customer by id     |
-| GET    | `/customer/get-{id}`        | Get a customer by id        |
-| GET    | `/customer/get/all`         | List all customers          |
-| DELETE | `/customer/delete-{id}`     | Delete a customer by id     |
+| Method | Path               | Description             |
+|--------|--------------------|-------------------------|
+| POST   | `/customer`        | Create a customer       |
+| GET    | `/customer`        | List all customers      |
+| GET    | `/customer/{id}`   | Get a customer by id    |
+| PUT    | `/customer/{id}`   | Update a customer by id |
+| DELETE | `/customer/{id}`   | Delete a customer by id |
 
 ### Orders (`/order`)
 
-| Method | Path                     | Description              |
-|--------|--------------------------|--------------------------|
-| POST   | `/order/create`          | Create an order          |
-| PUT    | `/order/update-{id}`     | Update an order by id    |
-| GET    | `/order/get-{id}`        | Get an order by id       |
-| GET    | `/order/get/all`         | List all orders          |
-| DELETE | `/order/delete-{id}`     | Delete an order by id    |
+| Method | Path                            | Description                                      |
+|--------|---------------------------------|--------------------------------------------------|
+| POST   | `/order`                        | Create an order                                  |
+| GET    | `/order`                        | List all orders                                  |
+| GET    | `/order/references?item_name=`  | Count orders referencing an item name (internal) |
+| GET    | `/order/{id}`                   | Get an order by id                               |
+| PUT    | `/order/{id}`                   | Update an order by id                            |
+| DELETE | `/order/{id}`                   | Delete an order by id                            |
+
+> `GET /order/references` is an **internal-only** endpoint used by the sellers service.
+> It requires the shared `X-Internal-Api-Key` header and returns HTTP 403 otherwise.
 
 ### Favorite items (`/customer-favorite-item`)
 
-| Method | Path                                         | Description                         |
-|--------|----------------------------------------------|-------------------------------------|
-| POST   | `/customer-favorite-item/create`             | Add a favorite item for a customer  |
-| PUT    | `/customer-favorite-item/update-{id}`        | Update a favorite item by id        |
-| GET    | `/customer-favorite-item/get-item-{id}`      | Get a favorite item by id           |
-| GET    | `/customer-favorite-item/get-customer-{id}`  | Get a customer and their favorites  |
-| DELETE | `/customer-favorite-item/delete-{id}`        | Delete a favorite item by id        |
+| Method | Path                                            | Description                                       |
+|--------|-------------------------------------------------|---------------------------------------------------|
+| POST   | `/customer-favorite-item`                       | Add a favorite item for a customer                |
+| GET    | `/customer-favorite-item?customer_id=`          | Get a customer and their favorites                |
+| GET    | `/customer-favorite-item/references?item_id=`   | Count favorites referencing an item id (internal) |
+| POST   | `/customer-favorite-item/lookup/by-name`        | Look up an item by name and favorite it           |
+| POST   | `/customer-favorite-item/lookup/by-id`          | Look up an item by id and favorite it             |
+| GET    | `/customer-favorite-item/{id}`                  | Get a favorite item by id                         |
+| PUT    | `/customer-favorite-item/{id}`                  | Update a favorite item by id                      |
+| DELETE | `/customer-favorite-item/{id}`                  | Delete a favorite item by id                      |
 
-> `GET /customer-favorite-item/get-customer-{id}` returns the customer **once**, followed
+> `GET /customer-favorite-item/references` is an **internal-only** endpoint used by the
+> sellers service. It requires the shared `X-Internal-Api-Key` header and returns HTTP 403
+> otherwise.
+>
+> The two `lookup/*` endpoints take a JSON body (not query/path params) because they
+> **mutate** state: they resolve the item from the sellers service and add it to the
+> customer's favorites if it is missing. Bodies:
+>
+> ```json
+> // POST /customer-favorite-item/lookup/by-name
+> { "customer_id": 1, "item_name": "Laptop" }
+>
+> // POST /customer-favorite-item/lookup/by-id
+> { "customer_id": 1, "item_id": 5 }
+> ```
+>
+> `GET /customer-favorite-item?customer_id=` returns the customer **once**, followed
 > by a flat list of their favorite items, instead of repeating the customer on every item:
 >
 > ```json
@@ -160,14 +184,14 @@ Interactive API docs are then available at `http://localhost:8000/docs`.
 
 ### TVmaze (`/tv_maze`)
 
-| Method | Path                          | Description                        |
-|--------|-------------------------------|------------------------------------|
-| GET    | `/tv_maze/get/show-{show_id}` | Fetch a TV show from the TVmaze API|
+| Method | Path                      | Description                        |
+|--------|---------------------------|------------------------------------|
+| GET    | `/tv_maze/shows/{show_id}`| Fetch a TV show from the TVmaze API|
 
 ### Example
 
 ```bash
-curl -X POST http://localhost:8000/customer/create \
+curl -X POST http://localhost:8000/customer \
   -H "Content-Type: application/json" \
   -d '{"first_name": "Jane", "last_name": "Doe", "email": "jane@example.com", "status": "VIP"}'
 ```
