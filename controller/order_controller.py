@@ -63,8 +63,8 @@ async def get_all_orders() -> List[Order]:
 
 
 @router.get("/references", status_code=200, dependencies=[Depends(verify_internal_api_key)])
-async def count_orders_by_item_name(item_name: str = Query(...)) -> int:
-    return await order_service.count_orders_by_item_name(item_name)
+async def count_orders_by_item_id(item_id: int = Query(...)) -> int:
+    return await order_service.count_orders_by_item_id(item_id)
 
 
 @router.get("/{order_id}", response_model=Order, status_code=200)

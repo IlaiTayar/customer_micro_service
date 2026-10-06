@@ -99,7 +99,7 @@ async def _add_to_favorites_if_missing(customer_id: int, item: ItemResponse) -> 
         new_favorite_item_id = await customer_favorite_item_repository.create_favorite_item(favorite_item)
         return CustomerFavoriteItemResponse(favorite_item_id=new_favorite_item_id, customer_id=customer_id, item_response=item)
 
-    return CustomerFavoriteItemResponse(favorite_item_id=existing_favorite_item.favorite_item_id, customer_id=customer_id, item_response=item)
+    return FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS
 
 
 async def lookup_item_by_name_and_favorite(customer_id: int, item_name: str) -> Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException]:

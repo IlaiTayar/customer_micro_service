@@ -62,4 +62,5 @@ async def delete_order_by_id(order_id: int) -> Union[str, OrderException]:
     order = await get_order_by_id(order_id)
     if isinstance(order, OrderException): return order
     return await order_repository.delete_order_by_id(order_id)
-async def count_orders_by_item_name(item_name: str) -> int: return await order_repository.count_orders_by_item_name(item_name)
+async def count_orders_by_item_id(item_id: int) -> int:
+    return await order_repository.count_orders_by_item_id(item_id)
