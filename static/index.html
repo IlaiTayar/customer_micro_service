@@ -82,10 +82,14 @@
         <h2>Find an item</h2>
         <div class="inline">
           <div class="field"><label>Item name</label><input id="itemSearchName" placeholder="Laptop"/></div>
-          <button id="itemSearchNameBtn" class="btn">Search by name</button>
+          <div class="field"><label>Seller name (optional)</label><input id="itemSearchSeller" placeholder="TechStore"/></div>
+          <button id="itemSearchNameBtn" class="btn">Search item</button>
+          <div class="field"><label>Seller name</label><input id="sellerSearchName" placeholder="TechStore"/></div>
+          <button id="sellerSearchBtn" class="btn secondary">All seller items</button>
           <div class="field"><label>Item id</label><input id="itemSearchId" type="number" placeholder="1"/></div>
           <button id="itemSearchIdBtn" class="btn secondary">Search by id</button>
         </div>
+        <p class="hint">Searching by item name returns the lowest-price item. Add a seller name to find that item specifically from that seller, or search a seller name to see all of that seller's items.</p>
         <div id="itemResult"></div>
       </section>
 
