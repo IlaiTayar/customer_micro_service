@@ -348,6 +348,12 @@ document.addEventListener('DOMContentLoaded', () => {
   $('itemSearchNameBtn').onclick = searchItemByName;
   $('itemSearchIdBtn').onclick = searchItemById;
   $('sellerSearchBtn').onclick = searchItemsBySellerName;
+
+  document.querySelectorAll('input').forEach(input => input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const button = input.closest('.inline, .form-row')?.querySelector('button');
+    if (button) button.click();
+  }));
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
   document.querySelectorAll('.authtab').forEach(t => t.onclick = () => switchAuth(t.dataset.auth));
   document.querySelectorAll('#custScope .seg').forEach(b => b.onclick = () => { custScope = b.dataset.scope; syncSeg('custScope', custScope); loadCustomers(); });
