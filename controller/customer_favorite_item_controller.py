@@ -1,4 +1,4 @@
-from typing import List, Optional, Any, Union
+from typing import Any, Union
 
 from fastapi import APIRouter, HTTPException
 
@@ -7,6 +7,7 @@ from model.exception_handler_model.customer_exception import CustomerException
 from model.exception_handler_model.favorite_item_exception import FavoriteItemException
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
 from model.requst_response_models.customer_favorite_item_response import CustomerFavoriteItemResponse
+from model.requst_response_models.customer_favorites_response import CustomerFavoritesResponse
 from service import customer_favorite_item_service
 
 router: APIRouter = APIRouter(prefix="/customer-favorite-item",
@@ -58,9 +59,9 @@ async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItem
     return final_result
 
 
-@router.get("/get-customer-{customer_id}")
-async def get_favorite_items_by_customer_id(customer_id: int) -> List[CustomerFavoriteItemResponse]:
-    result: Union[List[CustomerFavoriteItemResponse], CustomerException] = await customer_favorite_item_service.get_favorite_items_by_customer_id(customer_id)
+@router.get("/get-customer-{customer_id}", response_model=CustomerFavoritesResponse, status_code=200)
+async def get_favorite_items_by_customer_id(customer_id: int) -> CustomerFavoritesResponse:
+    result: Union[CustomerFavoritesResponse, CustomerException] = await customer_favorite_item_service.get_favorite_items_by_customer_id(customer_id)
 
     final_result = _exception_handler(result)
 
@@ -70,6 +71,20 @@ async def get_favorite_items_by_customer_id(customer_id: int) -> List[CustomerFa
 @router.delete("/delete-{favorite_item_id}", status_code=200)
 async def delete_favorite_item_by_id(favorite_item_id: int) -> str:
     result: Union[str, FavoriteItemException] = await customer_favorite_item_service.delete_favorite_item_by_id(favorite_item_id)
+
+    final_result = _exception_handler(result)
+
+    return final_result
+
+
+@router.get("/references/by-item-{item_id}", status_code=200)
+async def count_favorites_by_item_id(item_id: int) -> int:
+    return await customer_favorite_item_service.count_favorites_by_item_id(item_id)
+
+
+@router.get("/lookup/by-name/{customer_id}-{item_name}", response_model=CustomerFavoriteItemResponse, status_code=200)
+async def lookup_item_by_name_and_favorite(customer_id: int, item_name: str) -> CustomerFavoriteItemResponse:
+    result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.lookup_item_by_name_and_favorite(customer_id, item_name)
 
     final_result = _exception_handler(result)
 

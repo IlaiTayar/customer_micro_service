@@ -13,8 +13,10 @@ over HTTP to resolve item prices, and it also demonstrates calling a public exte
 ## Features
 
 - CRUD for **customers**, with a VIP tier limited to 10 customers.
-- CRUD for **orders**; on creation the order price is looked up from the seller service
-  (lowest price for the item name).
+- CRUD for **orders**; on both creation and update the item name is validated against
+  the seller service and the order price is set from the lowest-priced match. If the item
+  name does not exist in the seller service the request is rejected (`404 ITEM_NOT_FOUND`)
+  and no order is created or updated.
 - CRUD for **customer favorite items**, validated against items in the seller service.
 - A **TVmaze** proxy endpoint that fetches show details from the public TVmaze API.
 - **Redis** caching for customer and favorite-item reads, with a configurable TTL.
@@ -141,8 +143,20 @@ Interactive API docs are then available at `http://localhost:8000/docs`.
 | POST   | `/customer-favorite-item/create`             | Add a favorite item for a customer  |
 | PUT    | `/customer-favorite-item/update-{id}`        | Update a favorite item by id        |
 | GET    | `/customer-favorite-item/get-item-{id}`      | Get a favorite item by id           |
-| GET    | `/customer-favorite-item/get-customer-{id}`  | List a customer's favorite items    |
+| GET    | `/customer-favorite-item/get-customer-{id}`  | Get a customer and their favorites  |
 | DELETE | `/customer-favorite-item/delete-{id}`        | Delete a favorite item by id        |
+
+> `GET /customer-favorite-item/get-customer-{id}` returns the customer **once**, followed
+> by a flat list of their favorite items, instead of repeating the customer on every item:
+>
+> ```json
+> {
+>   "customer": { "customer_id": 1, "first_name": "Jane", "last_name": "Doe", "email": "jane@example.com", "status": "REGULAR" },
+>   "favorite_items": [
+>     { "favorite_item_id": 10, "item_response": { "item_id": 5, "seller_id": 1, "item_name": "Laptop", "price": 999.99 } }
+>   ]
+> }
+> ```
 
 ### TVmaze (`/tv_maze`)
 

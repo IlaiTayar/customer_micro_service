@@ -2,10 +2,11 @@ from typing import Optional, List, Union
 
 from model.base_models.customer import Customer, CustomerStatus
 from model.exception_handler_model.customer_exception import CustomerException
-from repository import customer_repository, order_repository
+from repository import customer_repository, order_repository, customer_favorite_item_repository
+from notification import notification_service
 
 
-async def _check_for_vip(customer_status: CustomerStatus):
+async def _check_for_vip(customer_status: CustomerStatus) -> Union[List[Customer], CustomerException]:
     vip_customers: List[Customer] = await customer_repository.get_customer_by_status(customer_status)
     if len(vip_customers) >= 10:
         return CustomerException.VIP_MAX_LIMIT
@@ -75,7 +76,16 @@ async def delete_customer_by_id(customer_id: int) -> Union[str, CustomerExceptio
 
     customer_orders = await order_repository.get_orders_by_customer_id(customer_id)
     for order in customer_orders:
-        order_id = order.order_id
-        await order_repository.delete_order_by_id(order_id)
+        await order_repository.delete_order_by_id(order.order_id)
+
+    customer_favorites = await customer_favorite_item_repository.get_favorite_items_by_customer_id(customer_id)
+    for favorite in customer_favorites:
+        await customer_favorite_item_repository.delete_favorite_item_by_id(favorite.favorite_item_id)
+
+    if customer_orders or customer_favorites:
+        notification_service.notify_customer(
+            customer_id,
+            f"your account was deleted along with {len(customer_orders)} order(s) and {len(customer_favorites)} favorite item(s)"
+        )
 
     return await customer_repository.delete_customer_by_id(customer_id)

@@ -3,7 +3,7 @@ from typing import Optional
 from redisClient.redis_client import redis_client
 from config.config import Config
 
-config = Config()
+config: Config = Config()
 
 
 def get_cache_entity(key: str) -> Optional[str]:
@@ -13,17 +13,17 @@ def get_cache_entity(key: str) -> Optional[str]:
         return None
 
 
-def create_cache_entity(key: str, value: str):
+def create_cache_entity(key: str, value: str) -> None:
     if not redis_client.exists(key):
         redis_client.setex(key, config.REDIS_TTL, value)
 
 
-def update_cache_entity(key: str, value: str):
+def update_cache_entity(key: str, value: str) -> None:
     if redis_client.exists(key):
         redis_client.setex(key, config.REDIS_TTL, value)
 
 
-def remove_cache_entity(key: str):
+def remove_cache_entity(key: str) -> None:
     if redis_client.exists(key):
         redis_client.delete(key)
 

@@ -44,8 +44,8 @@ VALUES
 
 INSERT INTO orders (customer_id, item_name, price)
 VALUES
-(1, 'Laptop', 899.99),
-(2, 'Wireless Mouse', 29.99),
-(3, 'Keyboard', 79.50),
-(4, 'USB-C Cable', 14.99),
-(5, 'Monitor', 249.99);
+(1, 'Laptop', 999.99),
+(2, 'Mouse', 29.99),
+(3, 'Keyboard', 49.99),
+(4, 'USB Cable', 9.99),
+(5, 'Monitor', 199.99);

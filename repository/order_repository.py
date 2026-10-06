@@ -18,7 +18,7 @@ def _to_order(record: Record) -> Order:
     )
 
 
-async def create_order(order: Order):
+async def create_order(order: Order) -> None:
     query = f"""
     INSERT INTO {TABLE_NAME} ( customer_id, item_name, price)
     VALUES (:customer_id, :item_name, :price)
@@ -98,3 +98,12 @@ async def delete_order_by_id(order_id: Optional[int]) -> str:
 
     await database.execute(query, values)
     return "order deleted successfully"
+
+
+async def count_orders_by_item_name(item_name: str) -> int:
+    query = f"""
+    select count(*) from {TABLE_NAME} where item_name = :item_name
+    """
+
+    result = await database.fetch_val(query, values={"item_name": item_name})
+    return int(result or 0)

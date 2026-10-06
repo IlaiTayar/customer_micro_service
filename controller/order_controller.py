@@ -35,6 +35,9 @@ def _exception_handler(result:Any) -> Any :
         if result == OrderException.INVALID_INPUT:
             raise HTTPException(status_code=422, detail=f"{result.name}")
 
+        if result == OrderException.ITEM_NOT_FOUND:
+            raise HTTPException(status_code=404, detail=f"{result.name}")
+
     return result
 
 
@@ -81,3 +84,8 @@ async def delete_order_by_id(order_id: int) -> str:
     final_result = _exception_handler(result)
 
     return final_result
+
+
+@router.get("/references/by-item-name-{item_name}", status_code=200)
+async def count_orders_by_item_name(item_name: str) -> int:
+    return await order_service.count_orders_by_item_name(item_name)

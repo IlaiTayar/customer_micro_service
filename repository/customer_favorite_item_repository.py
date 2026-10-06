@@ -74,3 +74,10 @@ async def delete_favorite_item_by_id(favorite_item_id: int) -> str:
 
     await database.execute(query, values={"favorite_item_id": favorite_item_id})
     return f"favorite item with id: {favorite_item_id} was deleted successfully"
+
+
+async def count_favorites_by_item_id(item_id: int) -> int:
+    query = f"SELECT COUNT(*) FROM {TABLE_NAME} WHERE item_id=:item_id"
+
+    result = await database.fetch_val(query, values={"item_id": item_id})
+    return int(result or 0)
