@@ -17,12 +17,19 @@ function toast(msg, kind) {
 async function api(path, method, body) {
   const headers = { 'Content-Type': 'application/json' };
   if (session && session.token) headers['Authorization'] = 'Bearer ' + session.token;
-  const res = await fetch(API + path, { method: method || 'GET', headers, body: body ? JSON.stringify(body) : undefined });
+  let res;
+  try {
+    res = await fetch(API + path, { method: method || 'GET', headers, body: body ? JSON.stringify(body) : undefined });
+  } catch (e) {
+    throw new Error('Could not reach the server. Please try again.');
+  }
   const text = await res.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) { data = text; }
   if (!res.ok) {
-    const detail = data && data.detail ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail)) : ('HTTP ' + res.status);
+    const detail = data && data.detail
+      ? (typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail))
+      : ('Request failed (HTTP ' + res.status + ')');
     throw new Error(detail);
   }
   return data;
@@ -136,29 +143,88 @@ async function loadOrders() {
 }
 
 async function searchItemByName() {
-  const v = $('itemSearchName').value.trim();
-  if (!v) { toast('Enter an item name', 'err'); return; }
-  try { renderItem(await api('/item/by-name?item_name=' + encodeURIComponent(v))); }
-  catch (e) { toast(e.message, 'err'); }
+  lastItemSearch = { type: 'item', name: $('itemSearchName').value.trim(), seller: $('itemSearchSeller').value.trim() };
+  const name = $('itemSearchName').value.trim();
+  const seller = $('itemSearchSeller').value.trim();
+  if (!name) { toast('Enter an item name', 'err'); return; }
+  try {
+    const query = '?item_name=' + encodeURIComponent(name) + (seller ? '&seller_name=' + encodeURIComponent(seller) : '');
+    renderItem(await api('/item/by-name' + query));
+  } catch (e) { toast('Item search failed: ' + e.message, 'err'); }
 }
 
 async function searchItemById() {
   const v = parseInt($('itemSearchId').value, 10);
   if (!v) { toast('Enter an item id', 'err'); return; }
   try { renderItem(await api('/item/' + v)); }
-  catch (e) { toast(e.message, 'err'); }
+  catch (e) { toast('Item lookup failed: ' + e.message, 'err'); }
 }
 
-function renderItem(it) {
+async function searchItemsBySellerName() {
+  const seller = $('sellerSearchName').value.trim();
+  lastItemSearch = { type: 'seller', seller };
+  if (!seller) { toast('Enter a seller name', 'err'); return; }
+  try {
+    renderItems(await api('/item/by-seller-name?seller_name=' + encodeURIComponent(seller)), 'Items from seller: ' + seller);
+  } catch (e) { toast('Seller item search failed: ' + e.message, 'err'); }
+}
+
+function favoriteButton(it) {
+  const id = Number(it.item_id);
+  const exists = favoriteItemIds.has(id);
+  return exists
+    ? '<button class="btn secondary sm" disabled>Already in favorites</button>'
+    : '<button class="btn secondary sm" onclick="addSearchFavorite(' + id + ')">Add to Favorites</button>';
+}
+
+function itemCardHtml(it) {
   const img = it.image_url || PLACEHOLDER;
-  $('itemResult').innerHTML =
-    '<div class="item-card">' +
-    '<img src="' + esc(img) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/>' +
+  return '<div class="item-card">' +
+    '<img src="' + esc(img) + '" alt="' + esc(it.item_name) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/>' +
     '<div class="body"><div class="name">' + esc(it.item_name) + '</div>' +
     '<div class="price">$' + esc(it.price) + '</div>' +
     '<div class="meta">Item #' + esc(it.item_id) + ' · Seller #' + esc(it.seller_id) + '</div>' +
-    '<div class="foot"><button class="btn" id="addSearchedItem">Add to Order</button></div></div></div>';
-  $('addSearchedItem').onclick = () => placeSearchedOrder(it.item_id, it.item_name);
+    '<div class="foot"><button class="btn sm" onclick="placeSearchedOrder(' + esc(it.item_id) + ',\'' + esc(it.item_name).replace(/'/g, "\\'") + '\')">Order Item</button>' +
+    favoriteButton(it) + '</div></div></div>';
+}
+
+function renderItem(it) {
+  $('itemResult').innerHTML = itemCardHtml(it);
+}
+
+function renderItems(items, title) {
+  $('itemResult').innerHTML = (title ? '<h3>' + esc(title) + '</h3>' : '') +
+    (items || []).map(itemCardHtml).join('') ||
+    '<div class="empty">No matching items found.</div>';
+}
+
+async function addSearchFavorite(item_id) {
+  try {
+    await api('/customer-favorite-item/lookup/by-id', 'POST', { customer_id: session.customer_id, item_id });
+    favoriteItemIds.add(Number(item_id));
+    toast('Added to favorites', 'ok');
+    searchItemsByCurrentResult();
+    loadFavorites();
+  } catch (e) {
+    toast('Could not add favorite: ' + e.message, 'err');
+    if (e.message.toLowerCase().includes('already exists')) {
+      favoriteItemIds.add(Number(item_id));
+      searchItemsByCurrentResult();
+    }
+  }
+}
+
+let lastItemSearch = null;
+async function searchItemsByCurrentResult() {
+  if (!lastItemSearch) return;
+  if (lastItemSearch.type === 'item') {
+    try {
+      const query = '?item_name=' + encodeURIComponent(lastItemSearch.name) + (lastItemSearch.seller ? '&seller_name=' + encodeURIComponent(lastItemSearch.seller) : '');
+      renderItem(await api('/item/by-name' + query));
+    } catch (e) {}
+  } else if (lastItemSearch.type === 'seller') {
+    try { renderItems(await api('/item/by-seller-name?seller_name=' + encodeURIComponent(lastItemSearch.seller)), 'Items from seller: ' + lastItemSearch.seller); } catch (e) {}
+  }
 }
 
 async function placeSearchedOrder(item_id, item_name) {
@@ -202,6 +268,8 @@ function favTarget() {
   return v || session.customer_id;
 }
 
+let favoriteItemIds = new Set();
+
 async function loadFavorites() {
   const who = favTarget();
   const own = who === session.customer_id;
@@ -209,6 +277,7 @@ async function loadFavorites() {
   try {
     const r = await api('/customer-favorite-item?customer_id=' + who);
     const items = r.favorite_items || [];
+    if (own) favoriteItemIds = new Set(items.map(f => Number((f.item_response || {}).item_id)).filter(Boolean));
     const canEdit = own || isAdmin();
     $('favItems').innerHTML = items.map(f => {
       const it = f.item_response || {};
@@ -276,6 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
   $('fAddId').onclick = addFavById;
   $('favLoad').onclick = loadFavorites;
   $('tvGet').onclick = tvGet;
+  $('itemSearchNameBtn').onclick = searchItemByName;
+  $('itemSearchIdBtn').onclick = searchItemById;
+  $('sellerSearchBtn').onclick = searchItemsBySellerName;
   document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
   document.querySelectorAll('.authtab').forEach(t => t.onclick = () => switchAuth(t.dataset.auth));
   document.querySelectorAll('#custScope .seg').forEach(b => b.onclick = () => { custScope = b.dataset.scope; syncSeg('custScope', custScope); loadCustomers(); });
