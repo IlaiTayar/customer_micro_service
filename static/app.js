@@ -7,14 +7,6 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const isAdmin = () => session && session.role === 'admin';
 const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="180"><rect width="100%" height="100%" fill="#eef1f6"/><text x="50%" y="50%" fill="#9aa6b8" font-family="sans-serif" font-size="15" text-anchor="middle" dominant-baseline="middle">No image</text></svg>');
-const slug = (name) => ((name || 'item').toLowerCase().trim().replace(/[^a-z0-9]+/g, ',').replace(/^,+|,+$/g, '') || 'item');
-const autoImage = (name) => {
-  const s = slug(name);
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100000;
-  return 'https://loremflickr.com/400/300/' + encodeURIComponent(s) + '?lock=' + h;
-};
-
 function toast(msg, kind) {
   const t = $('toast');
   t.textContent = msg;
@@ -133,7 +125,7 @@ async function loadOrders() {
       const canEdit = mine || isAdmin();
       const owner = nameById[o.customer_id] || ('Customer #' + o.customer_id);
       const idCell = esc(owner) + (mine ? ' <span class="badge me">me</span>' : '');
-      const img = autoImage(o.item_name);
+      const img = o.image_url || PLACEHOLDER;
       const imgCell = '<img class="thumb" src="' + esc(img) + '" alt="' + esc(o.item_name) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/>';
       const acts = canEdit
         ? '<div class="actions"><button class="btn secondary sm" onclick="editOrder(' + o.order_id + ',\'' + esc(o.item_name).replace(/'/g, "\\'") + '\')">Edit</button><button class="btn danger sm" onclick="delOrder(' + o.order_id + ')">Cancel</button></div>'
@@ -142,6 +134,127 @@ async function loadOrders() {
     }).join('') || '<tr><td colspan=6 class="empty">No orders</td></tr>';
   } catch (e) { toast(e.message, 'err'); }
 }
+
+async function searchItemByName() { const v=$('itemSearchName').value.trim(); if(!v){toast('Enter an item name','err');return;} try{renderItem(await api('/item/by-name?item_name='+encodeURIComponent(v)));}catch(e){toast(e.message,'err');} }
+async function searchItemById() { const v=parseInt($('itemSearchId').value,10); if(!v){toast('Enter an item id','err');return;} try{renderItem(await api('/item/'+v));}catch(e){toast(e.message,'err');} }
+function renderItem(it){ const img=it.image_url||PLACEHOLDER; $('itemResult').innerHTML='<div class="item-card"><img src="'+esc(img)+'" onerror="this.src=\\''+PLACEHOLDER+'\\'"/><div class="body"><div class="name">'+esc(it.item_name)+'</div><div class="price">
+  const item_name = $('oItem').value.trim();
+  if (!item_name) { toast('Enter an item name', 'err'); return; }
+  const customer = { customer_id: session.customer_id, first_name: session.first_name, last_name: session.last_name, email: $('pEmail').value || 'na@na.com', status: $('pStatus').value || 'REGULAR' };
+  try { await api('/order', 'POST', { customer, order: { item_name } }); toast('Order placed', 'ok'); $('oItem').value = ''; loadOrders(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+window.editOrder = async function (id, current) {
+  const item_name = prompt('New item name:', current);
+  if (item_name == null || !item_name.trim()) return;
+  try { await api('/order/' + id, 'PUT', { order_id: id, item_name: item_name.trim() }); toast('Order updated', 'ok'); loadOrders(); }
+  catch (e) { toast(e.message, 'err'); }
+};
+
+window.delOrder = async function (id) {
+  if (!confirm('Cancel order ' + id + '?')) return;
+  try { await api('/order/' + id, 'DELETE'); toast('Order cancelled', 'ok'); loadOrders(); }
+  catch (e) { toast(e.message, 'err'); }
+};
+
+function favTarget() {
+  const v = parseInt($('favWho').value, 10);
+  return v || session.customer_id;
+}
+
+async function loadFavorites() {
+  const who = favTarget();
+  const own = who === session.customer_id;
+  $('favHint').textContent = own ? 'Showing your own favorites.' : ('Showing favorites of customer #' + who + (isAdmin() ? ' (admin view).' : '. You can only change your own.'));
+  try {
+    const r = await api('/customer-favorite-item?customer_id=' + who);
+    const items = r.favorite_items || [];
+    const canEdit = own || isAdmin();
+    $('favItems').innerHTML = items.map(f => {
+      const it = f.item_response || {};
+      const img = it.image_url || PLACEHOLDER;
+      const foot = canEdit ? '<div class="foot"><button class="btn danger sm" onclick="delFav(' + f.favorite_item_id + ')">Remove</button></div>' : '';
+      return '<div class="item-card"><img src="' + esc(img) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/><div class="body"><div class="name">' + esc(it.item_name) + '</div><div class="price">$' + esc(it.price) + '</div><div class="meta">Seller #' + esc(it.seller_id) + ' \u00b7 fav #' + esc(f.favorite_item_id) + '</div></div>' + foot + '</div>';
+    }).join('') || '<div class="empty">No favorites yet.</div>';
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function addFavByName() {
+  const item_name = $('fName').value.trim();
+  if (!item_name) { toast('Enter an item name', 'err'); return; }
+  try { await api('/customer-favorite-item', 'POST', { customer_id: favTarget(), item_name }); toast('Added to favorites', 'ok'); $('fName').value = ''; loadFavorites(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+async function addFavById() {
+  const item_id = parseInt($('fId').value, 10);
+  if (!item_id) { toast('Enter an item id', 'err'); return; }
+  try { await api('/customer-favorite-item/lookup/by-id', 'POST', { customer_id: favTarget(), item_id }); toast('Added to favorites', 'ok'); $('fId').value = ''; loadFavorites(); }
+  catch (e) { toast(e.message, 'err'); }
+}
+
+window.delFav = async function (id) {
+  if (!confirm('Remove favorite ' + id + '?')) return;
+  try { await api('/customer-favorite-item/' + id, 'DELETE'); toast('Removed', 'ok'); loadFavorites(); }
+  catch (e) { toast(e.message, 'err'); }
+};
+
+async function tvGet() {
+  const id = parseInt($('tvId').value, 10);
+  if (!id) { toast('Enter a show id', 'err'); return; }
+  try {
+    const s = await api('/tv_maze/shows/' + id);
+    const img = s.tv_show_image_original_url || PLACEHOLDER;
+    $('tvResult').innerHTML = '<div class="item-card" style="max-width:320px"><img src="' + esc(img) + '" onerror="this.src=\'' + PLACEHOLDER + '\'"/><div class="body"><div class="name">' + esc(s.tv_show_name) + '</div><div class="meta">' + esc(s.tv_show_language || '') + '</div><div class="meta">' + esc((s.tv_show_description || '').replace(/<[^>]+>/g, '').slice(0, 200)) + '</div></div></div>';
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+  $('tab-' + name).classList.remove('hidden');
+}
+
+function syncSeg(groupId, val) {
+  document.querySelectorAll('#' + groupId + ' .seg').forEach(b => b.classList.toggle('active', b.dataset.scope === val));
+}
+
+function switchAuth(name) {
+  document.querySelectorAll('.authtab').forEach(t => t.classList.toggle('active', t.dataset.auth === name));
+  $('authLogin').classList.toggle('hidden', name !== 'login');
+  $('authRegister').classList.toggle('hidden', name !== 'register');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  $('loginBtn').onclick = doLogin;
+  $('registerBtn').onclick = doRegister;
+  $('logoutBtn').onclick = logout;
+  $('pSave').onclick = saveProfile;
+  $('pDelete').onclick = deleteProfile;
+  $('oCreate').onclick = createOrder;
+  $('itemSearchNameBtn').onclick = searchItemByName;
+  $('itemSearchIdBtn').onclick = searchItemById;
+  $('itemSearchName').addEventListener('keydown', e => { if(e.key==='Enter') searchItemByName(); });
+  $('itemSearchId').addEventListener('keydown', e => { if(e.key==='Enter') searchItemById(); });
+  $('oItem').addEventListener('keydown', e => { if(e.key==='Enter') createOrder(); });
+  $('fName').addEventListener('keydown', e => { if(e.key==='Enter') addFavByName(); });
+  $('fId').addEventListener('keydown', e => { if(e.key==='Enter') addFavById(); });
+  $('tvId').addEventListener('keydown', e => { if(e.key==='Enter') tvGet(); });
+  $('loginId').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  $('loginEmail').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  ['regFirst','regLast','regEmail'].forEach(id => $(id).addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); }));
+  $('fAddName').onclick = addFavByName;
+  $('fAddId').onclick = addFavById;
+  $('favLoad').onclick = loadFavorites;
+  $('tvGet').onclick = tvGet;
+  document.querySelectorAll('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
+  document.querySelectorAll('.authtab').forEach(t => t.onclick = () => switchAuth(t.dataset.auth));
+  document.querySelectorAll('#custScope .seg').forEach(b => b.onclick = () => { custScope = b.dataset.scope; syncSeg('custScope', custScope); loadCustomers(); });
+  document.querySelectorAll('#orderScope .seg').forEach(b => b.onclick = () => { orderScope = b.dataset.scope; syncSeg('orderScope', orderScope); loadOrders(); });
+});
++esc(it.price)+'</div><div class="meta">Item #'+esc(it.item_id)+' · Seller #'+esc(it.seller_id)+'</div><div class="foot"><button class="btn" onclick="placeSearchedOrder('+esc(it.item_id)+',\\''+esc(it.item_name).replace(/'/g,"\\\\'")+"\\')">Add to Order</button></div></div></div>'; }
+async function placeSearchedOrder(item_id,item_name){ const customer={customer_id:session.customer_id,first_name:session.first_name,last_name:session.last_name,email:$('pEmail').value||'na@na.com',status:$('pStatus').value||'REGULAR'}; try{await api('/order','POST',{customer,order:{item_id,item_name}});toast('Order placed','ok');loadOrders();}catch(e){toast(e.message,'err');} }
 
 async function createOrder() {
   const item_name = $('oItem').value.trim();
