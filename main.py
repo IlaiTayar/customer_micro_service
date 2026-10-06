@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from controller.order_controller import router as order_router
 from controller.customer_controller import router as customer_router
+from controller.item_controller import router as item_router
 from controller.tv_maze_controller import router as tv_maze_router
 from controller.customer_favorite_item_controller import router as favorite_item_router
 from controller.auth_controller import router as auth_router
@@ -26,6 +27,7 @@ app: FastAPI = FastAPI(lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(customer_router)
+app.include_router(item_router)
 app.include_router(favorite_item_router)
 app.include_router(tv_maze_router)
 
