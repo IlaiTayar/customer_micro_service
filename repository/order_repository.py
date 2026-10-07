@@ -86,5 +86,6 @@ async def delete_order_by_id(order_id: int) -> str:
 async def count_orders_by_item_id(item_id: int) -> int:
     result = await database.fetch_val(
         f"SELECT count(*) FROM {TABLE_NAME} WHERE item_id=:item_id",
+        values={"item_id": item_id},
     )
     return int(result or 0)
