@@ -89,8 +89,8 @@ async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItem
 
 
 @router.put("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
-async def update_favorite_item_by_id(favorite_item_id: int, customer_request: CustomerFavoriteItemRequest) -> CustomerFavoriteItemResponse:
-    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id, customer_request)
+async def update_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItemResponse:
+    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id)
 
     final_result = _exception_handler(result)
 
