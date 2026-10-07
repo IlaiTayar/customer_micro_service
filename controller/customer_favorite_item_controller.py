@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Query
 from model.exception_handler_model.customer_exception import CustomerException
 from model.exception_handler_model.favorite_item_exception import FavoriteItemException
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
+from model.requst_response_models.favorite_item_update_request import FavoriteItemUpdateRequest
 from model.requst_response_models.customer_favorite_item_response import CustomerFavoriteItemResponse
 from model.requst_response_models.customer_favorites_response import CustomerFavoritesResponse
 from service import customer_favorite_item_service
@@ -70,7 +71,7 @@ async def get_favorite_item_by_id(
 @router.put("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
 async def update_favorite_item_by_id(
     favorite_item_id: int,
-    favorite_item_request: CustomerFavoriteItemRequest
+    favorite_item_request: FavoriteItemUpdateRequest
 ) -> CustomerFavoriteItemResponse:
     result = await customer_favorite_item_service.update_favorite_item_by_id(
         favorite_item_id,
