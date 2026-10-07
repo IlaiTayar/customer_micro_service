@@ -9,7 +9,6 @@ from model.exception_handler_model.favorite_item_exception import FavoriteItemEx
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
 from model.requst_response_models.customer_favorite_item_response import CustomerFavoriteItemResponse
 from model.requst_response_models.customer_favorites_response import CustomerFavoritesResponse, FavoriteItemEntry
-from model.requst_response_models.favorite_item_update_request import FavoriteItemUpdateRequest
 from repository import customer_favorite_item_repository
 from service import customer_service
 
@@ -57,7 +56,7 @@ async def create_favorite_item(
 
 async def update_favorite_item_by_id(
     favorite_item_id: int,
-    favorite_item_request: FavoriteItemUpdateRequest
+    favorite_item_request: CustomerFavoriteItemRequest
 ) -> Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException]:
     existing_favorite = await get_favorite_item_by_id(favorite_item_id)
     if isinstance(existing_favorite, (FavoriteItemException, CustomerException)):
