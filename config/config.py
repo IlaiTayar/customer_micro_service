@@ -11,9 +11,6 @@ class Config(BaseSettings):
 
     TV_MAZE_BASE_URL: str = "https://api.tvmaze.com"
     SELLER_SERVICE_BASE_URL: str = "http://localhost:8001"
-    INTERNAL_API_KEY: str = "internal-shared-key"
-    AUTH_SECRET: str = "dev-customer-auth-secret-change-me"
-    AUTH_TOKEN_TTL_MINUTES: int = 120
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
