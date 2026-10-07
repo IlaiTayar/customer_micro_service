@@ -7,7 +7,6 @@ from model.exception_handler_model.favorite_item_exception import FavoriteItemEx
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
 from model.requst_response_models.customer_favorite_item_response import CustomerFavoriteItemResponse
 from model.requst_response_models.customer_favorites_response import CustomerFavoritesResponse
-from model.requst_response_models.favorite_item_update_request import FavoriteItemUpdateRequest
 from service import customer_favorite_item_service
 
 router: APIRouter = APIRouter(
@@ -60,8 +59,10 @@ async def count_favorites_by_item_id(item_id: int = Query(...)) -> int:
     return await customer_favorite_item_service.count_favorites_by_item_id(item_id)
 
 
-@router.get("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
-async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItemResponse:
+@router.get("/lookup/by-id", response_model=CustomerFavoriteItemResponse, status_code=200)
+async def get_favorite_item_by_id(
+    favorite_item_id: int = Query(...)
+) -> CustomerFavoriteItemResponse:
     result = await customer_favorite_item_service.get_favorite_item_by_id(favorite_item_id)
     return _exception_handler(result)
 
@@ -69,7 +70,7 @@ async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItem
 @router.put("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
 async def update_favorite_item_by_id(
     favorite_item_id: int,
-    favorite_item_request: FavoriteItemUpdateRequest
+    favorite_item_request: CustomerFavoriteItemRequest
 ) -> CustomerFavoriteItemResponse:
     result = await customer_favorite_item_service.update_favorite_item_by_id(
         favorite_item_id,
