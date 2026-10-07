@@ -24,6 +24,9 @@ def _exception_handler(result: Any) -> Any:
         if result == FavoriteItemException.FAVORITE_ITEM_NOT_FOUND:
             raise HTTPException(status_code=404, detail=f"{result}")
 
+        if result == FavoriteItemException.ITEM_NOT_FOUND:
+            raise HTTPException(status_code=404, detail=f"{result}")
+
         if result == FavoriteItemException.ITEM_NOT_IN_FAVORITES:
             raise HTTPException(status_code=404, detail=f"{result}")
 
