@@ -33,7 +33,7 @@ async def create_favorite_item(
 
     item = await seller_service_api.find_lowest_price_item_by_name(customer_request.item_name)
     if item is None or item.item_id is None:
-        return FavoriteItemException.SOMTHING_WENT_WRONG
+        return FavoriteItemException.ITEM_NOT_FOUND
 
     existing_favorite = await get_favorite_item_by_customer_id_and_item_id(
         customer.customer_id,
