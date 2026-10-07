@@ -9,7 +9,6 @@ class Config(BaseSettings):
     MYSQL_PORT: int = 3306
     MYSQL_DATABASE: str = "main"
 
-    TV_MAZE_BASE_URL: str = "https://api.tvmaze.com"
     SELLER_SERVICE_BASE_URL: str = "http://localhost:8001"
     INTERNAL_API_KEY: str = "internal-shared-key"
     AUTH_SECRET: str = "dev-customer-auth-secret-change-me"
