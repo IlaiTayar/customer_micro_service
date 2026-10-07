@@ -7,14 +7,13 @@ from model.exception_handler_model.favorite_item_exception import FavoriteItemEx
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
 from model.requst_response_models.customer_favorite_item_response import CustomerFavoriteItemResponse
 from model.requst_response_models.customer_favorites_response import CustomerFavoritesResponse
-from model.requst_response_models.favorite_item_lookup_request import (
-    FavoriteItemLookupByIdRequest,
-    FavoriteItemLookupByNameRequest,
-)
+from model.requst_response_models.favorite_item_update_request import FavoriteItemUpdateRequest
 from service import customer_favorite_item_service
 
-router: APIRouter = APIRouter(prefix="/customer-favorite-item",
-                              tags=["customer-favorite-item"])
+router: APIRouter = APIRouter(
+    prefix="/customer-favorite-item",
+    tags=["customer-favorite-item"]
+)
 
 
 def _exception_handler(result: Any) -> Any:
@@ -25,6 +24,9 @@ def _exception_handler(result: Any) -> Any:
 
         if result == FavoriteItemException.FAVORITE_ITEM_NOT_FOUND:
             raise HTTPException(status_code=404, detail=f"{FavoriteItemException.FAVORITE_ITEM_NOT_FOUND}")
+
+        if result == FavoriteItemException.ITEM_NOT_IN_FAVORITES:
+            raise HTTPException(status_code=404, detail=f"{FavoriteItemException.ITEM_NOT_IN_FAVORITES}")
 
         if result == FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS:
             raise HTTPException(status_code=409, detail=f"{FavoriteItemException.FAVORITE_ITEM_ALREADY_EXISTS}")
@@ -37,21 +39,14 @@ def _exception_handler(result: Any) -> Any:
 
 @router.post("", response_model=CustomerFavoriteItemResponse, status_code=201)
 async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) -> CustomerFavoriteItemResponse:
-
     result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.create_favorite_item(customer_request)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+    return _exception_handler(result)
 
 
 @router.get("", response_model=CustomerFavoritesResponse, status_code=200)
 async def get_favorite_items_by_customer_id(customer_id: int = Query(...)) -> CustomerFavoritesResponse:
     result: Union[CustomerFavoritesResponse, CustomerException] = await customer_favorite_item_service.get_favorite_items_by_customer_id(customer_id)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+    return _exception_handler(result)
 
 
 @router.get("/references", status_code=200)
@@ -60,47 +55,30 @@ async def count_favorites_by_item_id(item_id: int = Query(...)) -> int:
 
 
 @router.post("/lookup/by-name", response_model=CustomerFavoriteItemResponse, status_code=200)
-async def lookup_item_by_name_and_favorite(lookup_request: FavoriteItemLookupByNameRequest) -> CustomerFavoriteItemResponse:
-
-    result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.lookup_item_by_name_and_favorite(lookup_request.customer_id, lookup_request.item_name)
-
-    final_result = _exception_handler(result)
-
-    return final_result
-
-
-@router.post("/lookup/by-id", response_model=CustomerFavoriteItemResponse, status_code=200)
-async def lookup_item_by_id_and_favorite(lookup_request: FavoriteItemLookupByIdRequest) -> CustomerFavoriteItemResponse:
-
-    result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.lookup_item_by_id_and_favorite(lookup_request.customer_id, lookup_request.item_id)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+async def lookup_item_by_name(lookup_request: CustomerFavoriteItemRequest) -> CustomerFavoriteItemResponse:
+    result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.lookup_item_by_name(lookup_request)
+    return _exception_handler(result)
 
 
 @router.get("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
 async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItemResponse:
-    result: Union[CustomerFavoriteItemResponse, FavoriteItemException] = await customer_favorite_item_service.get_favorite_item_by_id(favorite_item_id)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.get_favorite_item_by_id(favorite_item_id)
+    return _exception_handler(result)
 
 
 @router.put("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
-async def update_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItemResponse:
-    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+async def update_favorite_item_by_id(
+    favorite_item_id: int,
+    favorite_item_request: FavoriteItemUpdateRequest
+) -> CustomerFavoriteItemResponse:
+    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(
+        favorite_item_id,
+        favorite_item_request
+    )
+    return _exception_handler(result)
 
 
 @router.delete("/{favorite_item_id}", status_code=200)
 async def delete_favorite_item_by_id(favorite_item_id: int) -> str:
     result: Union[str, FavoriteItemException] = await customer_favorite_item_service.delete_favorite_item_by_id(favorite_item_id)
-
-    final_result = _exception_handler(result)
-
-    return final_result
+    return _exception_handler(result)
