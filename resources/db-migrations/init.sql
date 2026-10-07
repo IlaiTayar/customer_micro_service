@@ -19,7 +19,6 @@ customer_id INT NOT NULL,
 item_id INT NOT NULL,
 item_name VARCHAR(50) NOT NULL,
 price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-image_url VARCHAR(500),
 PRIMARY KEY(order_id),
 FOREIGN KEY(customer_id) REFERENCES customer(customer_id)
 );
@@ -49,10 +48,10 @@ VALUES
 (100, 'Admin', 'User', 'admin@admin', 'REGULAR');
 
 
-INSERT INTO orders (customer_id, item_id, item_name, price, image_url)
+INSERT INTO orders (customer_id, item_id, item_name, price)
 VALUES
-(1, 1, 'Laptop', 999.99, 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853'),
-(2, 5, 'Mouse', 29.99, 'https://images.unsplash.com/photo-1527814050087-3793815479db'),
-(3, 6, 'Keyboard', 49.99, 'https://images.unsplash.com/photo-1587829741301-dc798b83add3'),
-(4, 13, 'USB Cable', 9.99, 'https://images.unsplash.com/photo-1625842268584-8f3296236761'),
-(5, 4, 'Monitor', 199.99, 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf');
+(1, 1, 'Laptop', 999.99),
+(2, 5, 'Mouse', 29.99),
+(3, 6, 'Keyboard', 49.99),
+(4, 13, 'USB Cable', 9.99),
+(5, 4, 'Monitor', 199.99);
