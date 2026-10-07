@@ -16,7 +16,7 @@ router = APIRouter(
 
 
 def _exception_handler(result: Any) -> Any:
-    if isinstance(result, OrderException) or isinstance(result, CustomerException):
+    if isinstance(result, (OrderException, CustomerException)):
         if result == CustomerException.CUSTOMER_NOT_FOUND:
             raise HTTPException(status_code=404, detail=f"{result.name}")
 
@@ -43,13 +43,7 @@ def _exception_handler(result: Any) -> Any:
 
 @router.post("", response_model=OrderResponse, status_code=201)
 async def create_order(order_request: OrderRequest) -> OrderResponse:
-    result: Union[OrderResponse, OrderException, CustomerException] = await order_service.create_order(order_request)
-    return _exception_handler(result)
-
-
-@router.get("", response_model=List[Order], status_code=200)
-async def get_orders_by_customer_id(customer_id: int = Query(...)) -> List[Order]:
-    result: Union[List[Order], CustomerException] = await order_service.get_orders_by_customer_id(customer_id)
+    result = await order_service.create_order(order_request)
     return _exception_handler(result)
 
 
@@ -60,17 +54,23 @@ async def count_orders_by_item_id(item_id: int = Query(...)) -> int:
 
 @router.get("/id/{order_id}", response_model=Order, status_code=200)
 async def get_order_by_id(order_id: int) -> Order:
-    result: Union[Order, OrderException] = await order_service.get_order_by_id(order_id)
+    result = await order_service.get_order_by_id(order_id)
+    return _exception_handler(result)
+
+
+@router.get("/{customer_id}", response_model=List[Order], status_code=200)
+async def get_orders_by_customer_id(customer_id: int) -> List[Order]:
+    result = await order_service.get_orders_by_customer_id(customer_id)
     return _exception_handler(result)
 
 
 @router.put("/{order_id}", status_code=200)
 async def update_order_by_id(order_id: int, order: OrderUpdateRequest) -> str:
-    result: Union[str, OrderException] = await order_service.update_order_by_id(order_id, order)
+    result = await order_service.update_order_by_id(order_id, order)
     return _exception_handler(result)
 
 
 @router.delete("/{order_id}", status_code=200)
 async def delete_order_by_id(order_id: int) -> str:
-    result: Union[str, OrderException] = await order_service.delete_order_by_id(order_id)
+    result = await order_service.delete_order_by_id(order_id)
     return _exception_handler(result)
