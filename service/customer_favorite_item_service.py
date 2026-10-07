@@ -76,8 +76,16 @@ async def get_favorite_item_by_id(favorite_item_id: int) -> Union[CustomerFavori
     if favorite_item is None:
         return FavoriteItemException.FAVORITE_ITEM_NOT_FOUND
 
+    customer: Union[Customer, CustomerException] = await customer_service.get_customer_by_id(favorite_item.customer_id)
+    if isinstance(customer, CustomerException):
+        return customer
+
     item = await seller_service_api.get_item_by_item_id(favorite_item.item_id)
-    favorite_item_response: CustomerFavoriteItemResponse = CustomerFavoriteItemResponse(favorite_item_id=favorite_item_id, customer=await customer_service.get_customer_by_id(favorite_item.customer_id), item_response=item)
+    favorite_item_response: CustomerFavoriteItemResponse = CustomerFavoriteItemResponse(
+        favorite_item_id=favorite_item_id,
+        customer=customer,
+        item_response=item
+    )
 
     return favorite_item_response
 
