@@ -2,7 +2,6 @@ from typing import Any, Union
 
 from fastapi import APIRouter, HTTPException, Query
 
-from model.base_models.customer_favorite_item import CustomerFavoriteItem
 from model.exception_handler_model.customer_exception import CustomerException
 from model.exception_handler_model.favorite_item_exception import FavoriteItemException
 from model.requst_response_models.customer_favorite_item_request import CustomerFavoriteItemRequest
@@ -36,10 +35,10 @@ def _exception_handler(result: Any) -> Any:
     return result
 
 
-@router.post("", status_code=201)
-async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) -> int:
+@router.post("", response_model=CustomerFavoriteItemResponse, status_code=201)
+async def create_favorite_item(customer_request: CustomerFavoriteItemRequest) -> CustomerFavoriteItemResponse:
 
-    result: Union[int, CustomerException, FavoriteItemException] = await customer_favorite_item_service.create_favorite_item(customer_request)
+    result: Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException] = await customer_favorite_item_service.create_favorite_item(customer_request)
 
     final_result = _exception_handler(result)
 
@@ -89,9 +88,9 @@ async def get_favorite_item_by_id(favorite_item_id: int) -> CustomerFavoriteItem
     return final_result
 
 
-@router.put("/{favorite_item_id}", status_code=200)
-async def update_favorite_item_by_id(favorite_item_id: int, favorite_item: CustomerFavoriteItem) -> str:
-    result: Union[str, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id, favorite_item)
+@router.put("/{favorite_item_id}", response_model=CustomerFavoriteItemResponse, status_code=200)
+async def update_favorite_item_by_id(favorite_item_id: int, customer_request: CustomerFavoriteItemRequest) -> CustomerFavoriteItemResponse:
+    result: Union[CustomerFavoriteItemResponse, FavoriteItemException, CustomerException] = await customer_favorite_item_service.update_favorite_item_by_id(favorite_item_id, customer_request)
 
     final_result = _exception_handler(result)
 
