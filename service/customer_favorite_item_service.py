@@ -167,7 +167,7 @@ async def lookup_item_by_name(
 
     item = await seller_service_api.find_lowest_price_item_by_name(customer_request.item_name)
     if item is None or item.item_id is None:
-        return FavoriteItemException.SOMTHING_WENT_WRONG
+        return FavoriteItemException.ITEM_NOT_FOUND
 
     existing_favorite = await get_favorite_item_by_customer_id_and_item_id(
         customer.customer_id,
@@ -182,3 +182,23 @@ async def lookup_item_by_name(
         customer=customer,
         item_response=item
     )
+
+
+async def lookup_favorite_item_by_id(
+    customer_id: int,
+    favorite_item_id: int
+) -> Union[CustomerFavoriteItemResponse, CustomerException, FavoriteItemException]:
+    favorite = await get_favorite_item_by_id(favorite_item_id)
+
+    if isinstance(favorite, FavoriteItemException):
+        if favorite == FavoriteItemException.FAVORITE_ITEM_NOT_FOUND:
+            return FavoriteItemException.ITEM_NOT_IN_FAVORITES
+        return favorite
+
+    if isinstance(favorite, CustomerException):
+        return favorite
+
+    if favorite.customer.customer_id != customer_id:
+        return FavoriteItemException.ITEM_NOT_IN_FAVORITES
+
+    return favorite
