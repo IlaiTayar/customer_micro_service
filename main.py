@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 
 from controller.order_controller import router as order_router
 from controller.customer_controller import router as customer_router
@@ -30,5 +29,3 @@ app.include_router(customer_router)
 app.include_router(item_router)
 app.include_router(favorite_item_router)
 app.include_router(tv_maze_router)
-
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
