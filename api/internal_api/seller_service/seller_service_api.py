@@ -70,29 +70,15 @@ async def _try_get_from_seller_service(url: str, params: Optional[dict] = None) 
     return response.json()
 
 
-async def get_lowest_price_item_by_name(item_name: str, seller_name: Optional[str] = None) -> ItemResponse:
+async def get_lowest_price_item_by_name(item_name: str) -> ItemResponse:
     url = f"{config.SELLER_SERVICE_BASE_URL}/item/by-name"
-    params = {"item_name": item_name}
-    if seller_name:
-        params["seller_name"] = seller_name
-
-    data = await _get_from_seller_service(url, params=params)
+    data = await _get_from_seller_service(url, params={"item_name": item_name})
     return ItemResponse(**data)
 
 
-async def get_items_by_seller_name(seller_name: str) -> List[ItemResponse]:
-    url = f"{config.SELLER_SERVICE_BASE_URL}/item/by-seller-name"
-    data = await _get_from_seller_service(url, params={"seller_name": seller_name})
-    return [ItemResponse(**item) for item in data]
-
-
-async def find_lowest_price_item_by_name(item_name: str, seller_name: Optional[str] = None) -> Optional[ItemResponse]:
+async def find_lowest_price_item_by_name(item_name: str) -> Optional[ItemResponse]:
     url = f"{config.SELLER_SERVICE_BASE_URL}/item/by-name"
-
-    params = {"item_name": item_name}
-    if seller_name:
-        params["seller_name"] = seller_name
-    data = await _try_get_from_seller_service(url, params=params)
+    data = await _try_get_from_seller_service(url, params={"item_name": item_name})
 
     if data is None:
         return None
