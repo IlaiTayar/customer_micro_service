@@ -67,7 +67,7 @@ async def update_favorite_item_by_id(
         favorite_item_request.item_name
     )
     if item is None or item.item_id is None:
-        return FavoriteItemException.SOMTHING_WENT_WRONG
+        return FavoriteItemException.ITEM_NOT_FOUND
 
     existing_pair = await get_favorite_item_by_customer_id_and_item_id(
         existing_favorite.customer.customer_id,
