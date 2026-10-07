@@ -57,16 +57,11 @@ async def count_favorites_by_item_id(item_id: int = Query(...)) -> int:
     return await customer_favorite_item_service.count_favorites_by_item_id(item_id)
 
 
-@router.get("/lookup/by-name", response_model=CustomerFavoriteItemResponse, status_code=200)
+@router.post("/lookup/by-name", response_model=CustomerFavoriteItemResponse, status_code=200)
 async def lookup_item_by_name(
-    customer_id: int = Query(...),
-    item_name: str = Query(...)
+    customer_request: CustomerFavoriteItemRequest
 ) -> CustomerFavoriteItemResponse:
-    request = CustomerFavoriteItemRequest(
-        customer_id=customer_id,
-        item_name=item_name
-    )
-    result = await customer_favorite_item_service.lookup_item_by_name(request)
+    result = await customer_favorite_item_service.lookup_item_by_name(customer_request)
     return _exception_handler(result)
 
 
